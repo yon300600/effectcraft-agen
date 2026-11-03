@@ -20,6 +20,7 @@ the same plumbing (see [`EFFECTCRAFT_RECONSTRUCTION_RULES.md`](../../EFFECTCRAFT
 | `fixture/check_host.py` | Stand-in host + 48 checks, in wasmtime (Python). Mirrors `crates/plugin/src/wasm.rs`. |
 | `fixture/check_host.mjs` | The same contract in Node's V8, to prove the module is engine-independent. |
 | `host/` | The **real-host** check: loads the fixture through `effectcraft-plugin` (wasmi). Needs cargo. |
+| `app_check.sh` | The **in-application** check: drives `effectcraft-cli` to load, apply, parameterise and render the fixture (needs a CLI build). |
 | `run_tests.sh` | Builds, then runs both runtimes' harnesses. |
 
 ## Run it
@@ -38,6 +39,16 @@ The real-host check (needs a Rust toolchain, and the workspace's dependencies):
 ```sh
 cd tools/wasm-effect-kit/host && cargo run --release
 ```
+
+The in-application check (needs a CLI build; same engine, host and renderer as the desktop app):
+
+```sh
+cargo build -p effectcraft-cli
+EFFECTCRAFT_CLI=target/debug/effectcraft-cli tools/wasm-effect-kit/app_check.sh   # or: load|project|render
+```
+
+Which of these has actually been executed, and where, is tracked in
+[`EFFECTCRAFT_WASM_VERIFICATION.md`](../../EFFECTCRAFT_WASM_VERIFICATION.md).
 
 ## Use it for a new effect
 

@@ -34,17 +34,17 @@ jobs:
       - name: Build the CLI
         run: cargo build -p effectcraft-cli 2>&1 | tail -5
 
-      - name: App stage: load
+      - name: "App stage load"
         env:
           EFFECTCRAFT_CLI: target/debug/effectcraft-cli
         run: ./tools/wasm-effect-kit/app_check.sh load 2>&1 | tee /tmp/app-load.log
 
-      - name: App stage: project
+      - name: "App stage project"
         env:
           EFFECTCRAFT_CLI: target/debug/effectcraft-cli
         run: ./tools/wasm-effect-kit/app_check.sh project 2>&1 | tee /tmp/app-project.log | tail -40
 
-      - name: App stage: render
+      - name: "App stage render"
         env:
           EFFECTCRAFT_CLI: target/debug/effectcraft-cli
         run: ./tools/wasm-effect-kit/app_check.sh render 2>&1 | tee /tmp/app-render.log | tail -40
