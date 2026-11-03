@@ -1,0 +1,10 @@
+{
+  "api": 1,
+  "id": "org.effectcraft.wasmkit.fixture.spin",
+  "name": "WASM Kit Fixture: Runaway Loop",
+  "category": "Test Plug-ins",
+  "version": "1.0.0",
+  "author": "EffectCraft contributors",
+  "description": "Execution-limit fixture: ec_render never returns. NOT a production effect.",
+  "params": []
+}

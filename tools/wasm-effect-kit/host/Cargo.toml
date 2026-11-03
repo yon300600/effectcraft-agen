@@ -1,0 +1,14 @@
+[package]
+name = "wasm-effect-host-check"
+description = "Loads the WASM kit fixture through EffectCraft's real plug-in host (wasmi) and renders frames"
+version = "0.0.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+# Standalone: not a workspace member, so the app's build and CI never see it.
+[workspace]
+
+[dependencies]
+effectcraft-plugin = { path = "../../../crates/plugin", features = ["wasm"] }
+effectcraft-effects = { path = "../../../crates/effects" }
