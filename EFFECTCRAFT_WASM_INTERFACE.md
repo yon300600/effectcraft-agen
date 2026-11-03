@@ -200,7 +200,8 @@ plug-ins have no GPU path (`gpu: false`). Reconstructed effects are desktop/CLI 
 |---|---|---|
 | `fixture/check_host.py` | wasmtime (Python) | 48 checks: binary validity, no imports, exports, API version, manifest equality + schema, defaults, every parameter type, blur/gain/tint maths against an independent reference, `scale`, `time`, alpha, error codes, buffer-size refusal, 200 repeated renders, memory plateau, 1920×1080 frame, fuel stop, reload |
 | `fixture/check_host.mjs` | Node / V8 | 14 checks: the same contract on a second engine |
-| `host/` | EffectCraft's real wasmi host | registration through `effectcraft_plugin::load_wasm`, identity/gain/blur through `EffectPlugin::render`, error path leaves pixels unchanged (`cargo run --release`, not run in the build sandbox) |
+| `host/` | EffectCraft's real wasmi host | registration through `effectcraft_plugin::load_wasm`, identity/gain/blur through `EffectPlugin::render`, error path leaves pixels unchanged (`cargo run --release`) — **executed on a GitHub runner**, see `EFFECTCRAFT_WASM_VERIFICATION.md` |
+| `app_check.sh` | the shipped `effectcraft-cli` (real engine, loader and renderer) | `effect.plugins.load`, `effect.plugins.list`, `effect.apply`, `prop.set`, `props`, `renderQueue.render` on the fixture |
 
 Two results worth keeping in mind when implementing a new effect:
 
@@ -210,3 +211,22 @@ Two results worth keeping in mind when implementing a new effect:
   second implementation can be compared bit-for-bit.
 * **Engine independence holds.** The same binary produced identical results in wasmtime and V8,
   which is the property EffectCraft needs in order to promise "same pixels on every machine".
+
+## 8. Before a module loads in the application (checklist)
+
+A module that passes §7 is not yet "loaded in EffectCraft". The application side has its own
+requirements, all of them already implemented in the repository:
+
+1. **A native build with the `wasm` feature** (`crates/plugin/Cargo.toml`, enabled by
+   `crates/host`). Without it the loader says plug-ins are unavailable in this build.
+2. **A session with a plug-in loader** — `crates/host/src/lib.rs::session()` sets
+   `Session::plugin_loader` when `effectcraft_plugin::wasm_available()`.
+3. **A load call in that session**: Effect ▸ Load Effect Plug-in…, `effect.plugins.load
+   {path|folder}`, or (desktop only) a file in `<settings>/Plug-ins/` at start-up. The CLI does
+   not scan that folder.
+4. **A manifest the validator accepts** (§3) and an id not already taken.
+5. **The module loaded again in every process** that opens a project using the effect: `.ecproj`
+   stores the effect id, not the module.
+6. **Native platforms only** — the browser build has no wasmi runtime, and plug-ins are CPU-only.
+
+`EFFECTCRAFT_WASM_VERIFICATION.md` tracks which of these have actually been executed.

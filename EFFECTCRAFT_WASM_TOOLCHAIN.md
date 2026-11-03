@@ -140,10 +140,33 @@ cargo test -p effectcraft-host --test it plugins
 cargo xtask ci            # layers, assets, docs, wasm target, clippy, tests
 ```
 
+### 6a. What actually ran on a GitHub Actions runner (2026-11-04)
+
+The sandbox cannot compile Rust, but a GitHub runner can. A temporary workflow
+(`wasm host check`, run `41731160392`, Ubuntu 24.04, PR #1 head) executed:
+
+| Step | Result |
+|---|---|
+| `rustc --version` / `cargo --version` | success (runner toolchain, stable) |
+| `cd tools/wasm-effect-kit/host && cargo run --release` — **the real `effectcraft-plugin` wasmi host** | **success** |
+| `cargo test -p effectcraft-plugin` — the project's own plug-in tests | **success** |
+
+So the fixture module *is* accepted and rendered by EffectCraft's real host:
+`effectcraft_plugin::load_wasm` instantiated it under wasmi (no imports, fuel meter, 1 GiB store
+limit), read and validated the manifest, registered it as an `EffectSpec` with 7 parameters, and
+`EffectPlugin::render` produced the expected pixels (identity frame unchanged, gain 2× on RGB with
+alpha untouched, radius 2 blurring the frame); a short parameter list returned an error and left
+the frame unchanged. The workflow also drives the shipped CLI (`tools/wasm-effect-kit/app_check.sh`)
+to check the application-level path.
+
+The workflow file was temporary: it lives only on the working branch and is removed before the
+change is finished, because the project's rules forbid adding CI in a feature PR.
+
 Toolchain the project expects: Rust **1.95+** (`rust-version = "1.95"`, edition 2024) and
 `rustup target add wasm32-unknown-unknown` for the browser build (`docs/web.md`). The pinned git
 dependencies are on `github.com` (craft-libs, FilmCraft), so they are reachable from this sandbox
 even though the registry is not.
+
 
 ## 7. Known limitations of this environment
 

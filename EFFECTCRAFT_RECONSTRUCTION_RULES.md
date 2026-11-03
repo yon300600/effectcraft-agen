@@ -31,6 +31,23 @@ file, reality wins — then fix this file.**
 
 ---
 
+## 0.1 Conflicts with `AGENTS.md` — resolved here
+
+`AGENTS.md` outranks this file. Where an earlier revision of these rules could be read as
+permitting something `AGENTS.md` forbids, the table below states the binding resolution; the
+rest of this document has been rewritten to match it.
+
+| Topic | `AGENTS.md` | Risk in an effect-reconstruction workflow | Resolution (binding) |
+|---|---|---|---|
+| Adobe `.ffx` presets | §2: "Never read or copy Adobe … `.ffx` presets or effect plug-ins; the public Expression Language Reference and Scripting Guide describe *behaviour* only"; `docs/file-format-parity.md` puts `.ffx` outside clean-room scope | A user-supplied `effect_reconstruction.json` often *originates* from such a preset, and "parse every field" could be read as "analyse the format's internals" | Only the **user's own file** is opened, and only as **data about settings**: parameter names, types, values, ranges, and animation metadata. The `.ffx` binary format is never studied, documented, reimplemented or shipped as a reader; the algorithm is never derived from it. |
+| Adobe app bundles and plug-in binaries | §2: "Never read, disassemble or copy anything inside Adobe application bundles; file names and listings only" | Extracted packages contain base64 blobs that are compiled plug-in payloads | **Never disassembled, decompiled, emulated, decrypted, deobfuscated, pattern-matched or otherwise analysed.** Opaque chunks are hashed, sized, stored verbatim and reported (see §B0). |
+| Assets | §1: every asset open-licensed, with an `.attribution` sidecar and an `ATTRIBUTION.md` row; no Adobe imagery, "inspired" redraws included | Reconstruction bundles may carry icons, LUTs, reference frames | Any non-code file added to the repo needs a sidecar and an index row; Adobe-derived imagery is refused; if the licence is unclear, the file does not go in. |
+| Reference material | §1.5: After Effects reference screenshots and notes stay **local** (`plan/aftereffects/`, gitignored) and are never committed, bundled or shipped | Accuracy work wants reference renders | Reference renders and notes from a proprietary host stay **outside the repository** (a gitignored local folder), used only for local comparison. Never committed, attached to a PR, or included in a deliverable ZIP. |
+| Build artifacts | Implicitly: no caches, no large generated files | Committing a compiled module | Small deliverable `.wasm` files are allowed (they are the product of the task); generated headers, `target/`, caches and `.pyc` are ignored. |
+| CI | "Don't add or change CI in a feature or fix PR" | Needing a runner to compile Rust | Verification jobs are **temporary**, live on the working branch only, and are removed before the change is considered finished; anything permanent goes through the project's own process. |
+| Commits | `CONTRIBUTING.md`: one task per commit, `cargo xtask ci` green | Multi-effect batches | One effect per commit; gates run where they can run, and the ones that could not are named in the report — never described as passing. |
+| Honesty | `AGENTS.md` "Prove it", "Never crash" | Temptation to call ABI-level evidence "integration" | Verified-outside-the-app and verified-inside-the-app are reported separately (see `EFFECTCRAFT_WASM_VERIFICATION.md`). |
+
 ## A. Inspect the complete package
 
 For every uploaded file (and every nested file it references):
@@ -41,12 +58,18 @@ For every uploaded file (and every nested file it references):
    units, default values, ranges, popup options, group membership, order.
 3. **Record identity and provenance**: `id`, match names, plug-in/effect identifiers, version
    fields, host application and version, author/vendor, creation metadata, locale strings.
-4. **Decode Base64** where a field obviously is (`A`, `data`, `chunk`, `bytes`, `payload`,
-   long `[A-Za-z0-9+/=]` strings). Decode it, identify the format by magic bytes, and keep both
-   the encoded and decoded forms.
-5. **Preserve unknown binary chunks verbatim** (write them under
-   `extensions/effects/<id>/import/…`, or keep Base64 in the analysis document). Never
-   silently drop data; never "clean up" a package.
+4. **Identify encoded blobs — nothing more.** Where a field is obviously Base64 (`A`, `data`,
+   `chunk`, `bytes`, `payload`, long `[A-Za-z0-9+/=]` strings), decode it **only far enough to
+   classify it**: length, SHA-256, and the first bytes' magic. Then stop. Decoding to *classify*
+   is allowed; analysing the contents is not (§B0).
+   * If it is JSON or another text document describing settings → treat it as data (§B).
+   * If it is a compiled module, plug-in payload, resource fork, encrypted or obfuscated data →
+     it is **opaque**: record `{field, bytes, sha256, magic, guessed-container}` and preserve it
+     verbatim. Do not disassemble, decompile, emulate, decrypt, deobfuscate or pattern-match it.
+5. **Preserve unknown binary chunks verbatim**, outside version control where the licence or
+   provenance is unknown (`extensions/effects/<id>/import/` with a `.gitignore`, or the raw Base64
+   in the analysis document if the bytes must travel with it). Never silently drop data; never
+   "clean up" a package; never commit a proprietary binary.
 6. **Extract all animation data**: keyframe times, values, interpolation types, in/out eases,
    bezier handles, influences, speeds, holds, roving flags, and the timebase they are expressed
    in (fps, comp duration, sample rate).
@@ -56,6 +79,37 @@ For every uploaded file (and every nested file it references):
 
 Deliverable of this phase: `extensions/effects/<id>/ANALYSIS.md` — a complete inventory, in
 tables, plus the list of uninterpreted fields and any decoded blobs with their format and SHA-256.
+
+## B0. Hard prohibitions: proprietary binaries and `.ffx` data
+
+These prohibitions are absolute. They implement `AGENTS.md` §2 and are not negotiable because a
+reconstruction "needs" the information.
+
+**Never reverse-engineer.** No disassembly, decompilation, decompression-inspection,
+deobfuscation, decryption, emulation, symbolic execution, string-carving or
+differential-probing of any proprietary binary — including compiled plug-ins (`.aex`, `.plugin`,
+`.dylib`, `.so`, `.dll`, Mach-O/PE/ELF payloads), encrypted or packed resource sections, and any
+binary embedded in a preset package. Tools that do this (objdump, otool, Ghidra, IDA,
+strings-on-binaries, `wasm2wat` on a third party's module, and their equivalents) are not applied
+to such files.
+
+**Never treat preset data as an algorithm.** `.ffx`-derived and preset-derived data yields
+*settings*: effect and parameter identifiers, values, ranges, interpolation and animation
+metadata. It never yields the processing algorithm, and it must not be used to infer one
+("parameter X is 0.37 at frame 12, therefore the kernel must be …" is not evidence). The algorithm
+comes from public documentation, published literature and independent reasoning (§C).
+
+**Never run or embed the proprietary plug-in.** No Adobe application, no Adobe plug-in, no
+compatibility layer, no "reference renderer" service. The reconstructed effect has no runtime or
+build dependency on proprietary software.
+
+**Never ship what you did not originate.** Opaque chunks stay opaque: hashed, sized, preserved,
+and reported as "not interpreted". They are not committed to the repository, not added to a PR,
+not bundled into a deliverable ZIP, and not presented as decoded.
+
+**What *is* allowed with a user package:** reading its JSON, recording parameter names, types,
+values, ranges and animation metadata, decoding a text/JSON blob to classify it, hashing and
+preserving opaque blobs, and reporting what could not be interpreted. That is the whole list.
 
 ## B. Understand what the package actually contains
 
@@ -155,7 +209,10 @@ play back like any other preset.
 
 1. When reference renders are supplied, compare them numerically and visually: per-channel
    absolute error, maximum error, percentage of pixels within tolerance, and difference images.
-   State the tolerance definition and the sample set.
+   State the tolerance definition and the sample set. **Reference renders from a proprietary host
+   stay local** (`plan/aftereffects/` or another gitignored folder, per `AGENTS.md` §1.5): they
+   are never committed, attached to a PR, or included in a deliverable ZIP. Only *our* renders,
+   generated from our own fixtures or openly licensed media, may enter the repository.
 2. Classify the result honestly: **exact** (bit-identical or within a stated epsilon),
    **close** (visually indistinguishable, measured error bounded), **approximate** (behaviour
    matches, pixels differ, differences described), **unsupported** (cannot be reproduced from the
@@ -183,12 +240,21 @@ Plus, when packaged for delivery: a ZIP containing the compiled `.wasm`, complet
 manifest, parameter definitions, reconstructed animation data, the native EffectCraft preset,
 tests, build instructions, README, test results and known limitations.
 
+The ZIP never contains: proprietary binaries or plug-ins, opaque chunks extracted from a
+package, Adobe-derived images/fonts/LUTs, or reference renders made in a proprietary host.
+
 **Deliver results, not explanations.** A reconstruction is finished only when the module runs,
 the app loads it, and the tests pass — or when the report says precisely which step failed.
 
 ---
 
 ## Testing gates (all must be attempted; record what ran)
+
+Report results in two **separate** columns, never merged: **verified outside the application**
+(module compiled, ABI conformance in a runtime, maths vs an independent reference) and **verified
+inside the application** (the real loader accepted it, the real renderer produced pixels). The kit
+that produces the first column and the script that produces the second are described in
+`EFFECTCRAFT_WASM_VERIFICATION.md`; a green first column is not evidence for the second.
 
 | Gate | How | Evidence required |
 |---|---|---|
