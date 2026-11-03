@@ -74,20 +74,23 @@ stage_project() {
 {"command":"effect.plugins.load","params":{"path":"$WASM"}}
 {"command":"effect.apply","params":{"comp":"WasmCheck","layer":"Plate","effect":"$PLUGIN_ID"}}
 {"command":"prop.set","params":{"comp":"WasmCheck","layer":"Plate","path":"effects/#1/gain","value":2.0}}
-{"command":"props","params":{"comp":"WasmCheck","layer":"Plate"}}
+{"command":"get_layer","params":{"comp":"WasmCheck","layer":"Plate","flat":true}}
 EOF
     cat "$OUT/project.json"
     say ""
-    python3 - "$OUT/project.json" "$OUT/with.ecproj" <<'PY'
+    python3 - "$OUT/project.json" "$OUT/with.ecproj" "$PLUGIN_ID" <<'PY'
 import json, sys
 doc = json.load(open(sys.argv[1]))
+want = sys.argv[3]
 steps = doc if isinstance(doc, list) else doc.get("results", doc)
 applied = steps[3]["result"]
-assert applied, "effect.apply returned nothing"
+assert applied["effect"] == want, f"applied {applied['effect']!r}, expected {want!r}"
+path = applied["paths"][0]
+assert path and path.startswith("effects/#"), f"unexpected instance path {path!r}"
 tree = steps[5]["result"]
 flat = json.dumps(tree)
-assert "effects/#1/gain" in flat or "gain" in flat, "no gain parameter in the layer's property tree"
-print("PASS project: effect applied by id; the instance's parameters are ordinary animatable properties")
+assert f"{path}/gain" in flat, f"{path}/gain missing from the layer's property tree"
+print(f"PASS project: applied by id as {path}; {path}/gain is an ordinary animatable property")
 PY
     [ -s "$OUT/with.ecproj" ] || die "project was not saved"
     say "PASS project: saved $OUT/with.ecproj"
