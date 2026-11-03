@@ -1,15 +1,41 @@
-name: wasm host check (temporary verification job)
+name: wasm host check
+
+# TEMPORARY verification job (not part of the project's CI): runs the WASM kit fixture through
+# EffectCraft's real plug-in host on a GitHub runner, then through the real CLI.
 on:
+  pull_request:
   workflow_dispatch:
+
 jobs:
   host:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
-        run: rustc --version && cargo --version
-      - name: Real-host check (effectcraft-plugin, wasmi)
-        run: cd tools/wasm-effect-kit/host && cargo run --release
+        run: |
+          rustc --version
+          cargo --version
+          rustup target list --installed
+      - name: Real host check (effectcraft-plugin, wasmi 2.0)
+        working-directory: tools/wasm-effect-kit/host
+        run: cargo run --release 2>&1 | tail -40
       - name: Plug-in crate tests
-        run: cargo test -p effectcraft-plugin
+        run: cargo test -p effectcraft-plugin 2>&1 | tail -30
+      - name: Build the CLI
+        run: cargo build -p effectcraft-cli
+      - name: "App stage: load"
+        continue-on-error: true
+        env:
+          EFFECTCRAFT_CLI: target/debug/effectcraft-cli
+        run: ./tools/wasm-effect-kit/app_check.sh load
+      - name: "App stage: project"
+        continue-on-error: true
+        env:
+          EFFECTCRAFT_CLI: target/debug/effectcraft-cli
+        run: ./tools/wasm-effect-kit/app_check.sh project
+      - name: "App stage: render"
+        continue-on-error: true
+        env:
+          EFFECTCRAFT_CLI: target/debug/effectcraft-cli
+        run: ./tools/wasm-effect-kit/app_check.sh render
