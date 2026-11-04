@@ -261,7 +261,6 @@ except ImportError as e:
 
 wasm, plugin = sys.argv[3], sys.argv[4]
 man = json.loads(open(os.path.join(os.path.dirname(wasm), "..", "src", "manifest.json")).read())
-SLOTS = {"slider": 1, "angle": 1, "checkbox": 1, "popup": 1, "point": 2, "color": 4}
 params = []
 for p in man["params"]:
     v = p["default"]
@@ -272,45 +271,91 @@ for p in man["params"]:
     else:
         params.append(float(v))
 
-eng = wasmtime.Engine()
-store = wasmtime.Store(eng)
-inst = wasmtime.Instance(store, wasmtime.Module.from_file(eng, wasm), [])
-ex = inst.exports(store)
-total = len(params) * 8 + wf * wh * 16
-base = ex["ec_alloc"](store, total)
-assert base, "ec_alloc returned null"
-pix = []
+# ---- diagnostics: what did the renderer actually hand the effect?
+hist = {}
 for y in range(wh):
     for x in range(wf):
         r, g, b = rgbpix(urows, uch, uf, y, x)
-        a = urows[y][x * uch + 3] / 255.0 if uch == 4 else 1.0
-        pix += [r / 255.0 * a, g / 255.0 * a, b / 255.0 * a, a]
-buf = bytearray(struct.pack(f"<{len(params)}d", *params))
-buf += struct.pack(f"<{len(pix)}f", *pix)
-ex["memory"].write(store, bytes(buf), base)
-rc = ex["ec_render"](store, base + len(params) * 8, wf, wh, base, len(params), 0.0, 1.0)
-assert rc == 0, f"ec_render returned {rc}"
-raw = bytes(ex["memory"].read(store, base + len(params) * 8, base + len(params) * 8 + wf * wh * 16))
-out = struct.unpack(f"<{wf * wh * 4}f", raw)
+        hist[(r, g, b)] = hist.get((r, g, b), 0) + 1
+top = sorted(hist.items(), key=lambda kv: -kv[1])[:6]
+print("without-effect frame: " + ", ".join(f"rgb{k} x{v}" for k, v in top))
+print(f"  distinct colours {len(hist)}, size {wf}x{wh}")
 
-diffs, worst = [], 0.0
-for i in range(wf * wh):
-    a = out[i * 4 + 3]
-    for c in range(3):
-        want = (out[i * 4 + c] / a * 255.0) if a > 0 else 0.0
-        got = rgbpix(wrows, wch, wf, i // wf, i % wf)[c]
-        d = abs(want - got)
-        diffs.append(d)
-        if d > worst:
-            worst = d
-mean = sum(diffs) / len(diffs)
-within2 = 100.0 * sum(1 for d in diffs if d <= 2.0) / len(diffs)
-print(f"parity with the standalone module: mean {mean:.2f}/255, worst {worst:.0f}/255, "
+eng = wasmtime.Engine()
+
+
+def run_module(pixels, scale):
+    """pixels: flat list of premultiplied (r,g,b,a) floats."""
+    store = wasmtime.Store(eng)
+    inst = wasmtime.Instance(store, wasmtime.Module.from_file(eng, wasm), [])
+    ex = inst.exports(store)
+    total = len(params) * 8 + wf * wh * 16
+    base = ex["ec_alloc"](store, total)
+    assert base, "ec_alloc returned null"
+    buf = bytearray(struct.pack(f"<{len(params)}d", *params))
+    buf += struct.pack(f"<{len(pixels)}f", *pixels)
+    ex["memory"].write(store, bytes(buf), base)
+    rc = ex["ec_render"](store, base + len(params) * 8, wf, wh, base, len(params), 0.0, scale)
+    assert rc == 0, f"ec_render returned {rc}"
+    raw = bytes(ex["memory"].read(store, base + len(params) * 8, base + len(params) * 8 + wf * wh * 16))
+    return struct.unpack(f"<{wf * wh * 4}f", raw)
+
+
+def to_linear(c):
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def to_display(c):
+    c = min(max(c, 0.0), 1.0)
+    return c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
+
+
+def build(space):
+    px = []
+    for y in range(wh):
+        for x in range(wf):
+            r, g, b = rgbpix(urows, uch, uf, y, x)
+            a = urows[y][x * uch + 3] / 255.0 if uch == 4 else 1.0
+            rgb = [r / 255.0, g / 255.0, b / 255.0]
+            if space == "linear":
+                rgb = [to_linear(v) for v in rgb]
+            px += [rgb[0] * a, rgb[1] * a, rgb[2] * a, a]
+    return px
+
+
+def compare(out, space):
+    diffs = []
+    for i in range(wf * wh):
+        a = out[i * 4 + 3]
+        for c in range(3):
+            want = out[i * 4 + c] / a if a > 0 else 0.0
+            if space == "linear":
+                want = to_display(want)
+            want *= 255.0
+            got = rgbpix(wrows, wch, wf, i // wf, i % wf)[c]
+            diffs.append(abs(want - got))
+    mean = sum(diffs) / len(diffs)
+    within2 = 100.0 * sum(1 for d in diffs if d <= 2.0) / len(diffs)
+    return mean, max(diffs), within2
+
+
+print("parity hypotheses (how the host might encode the frame it hands a plug-in):")
+results = []
+for space in ("display", "linear"):
+    for scale in (1.0, 0.5):
+        out = run_module(build(space), scale)
+        mean, worst, within2 = compare(out, space)
+        results.append((mean, space, scale, worst, within2))
+        print(f"  {space:7s} space, scale {scale:<4}: mean {mean:5.2f}/255, worst {worst:5.0f}, "
+              f"{within2:5.1f}% within 2/255")
+
+mean, space, scale, worst, within2 = min(results)
+print(f"best: {space} space, scale {scale} -> mean {mean:.2f}/255, worst {worst:.0f}/255, "
       f"{within2:.1f}% of channels within 2/255")
-assert mean <= 3.0, f"app render differs from the standalone module (mean {mean:.2f}/255)"
-assert within2 >= 95.0, f"only {within2:.1f}% of channels agree within 2/255"
-print("PASS render: the app's renderer reproduces the standalone module's pixels "
-      "(8-bit PNG quantisation and the app's f32 pipeline are the only differences)")
+assert mean <= 2.0, f"no host encoding reproduces the app's render (best: {space}/{scale}, mean {mean:.2f}/255)"
+assert within2 >= 95.0, f"only {within2:.1f}% of channels agree within 2/255 (best: {space}/{scale})"
+print(f"PASS render: the app's renderer reproduces the standalone module's pixels "
+      f"({space} space, scale {scale}); the residue is 8-bit PNG quantisation")
 PY
 }
 

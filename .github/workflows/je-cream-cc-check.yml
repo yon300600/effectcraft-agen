@@ -84,7 +84,7 @@ jobs:
             echo '```'
             echo "#### in-application checks"
             echo '```'
-            grep -v '^{"' /tmp/app.log 2>/dev/null | tail -60 || echo "(not run)"
+            grep -v '^{"' /tmp/app.log 2>/dev/null | tail -120 || echo "(not run)"
             echo '```'
             echo "#### generated native preset (commit this as preset/je-cream-cc.preset.json)"
             echo
