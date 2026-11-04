@@ -139,7 +139,8 @@ import json, sys
 doc = json.load(open(sys.argv[1]))
 steps = doc if isinstance(doc, list) else (doc.get("result") or doc.get("results") or doc)
 applied = steps[3]["result"]
-assert applied >= 1, f"anim.applyPreset applied {applied} effects"
+n = applied["applied"] if isinstance(applied, dict) else applied
+assert n >= 1, f"anim.applyPreset applied {n} effects"
 prop = steps[4]["result"]
 assert prop["match"] == "glow2_threshold", prop["match"]
 # The preset was saved before the 0.55 edit, so the restored instance carries the module's

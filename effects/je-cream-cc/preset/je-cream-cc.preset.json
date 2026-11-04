@@ -1,0 +1,939 @@
+{
+  "effectcraftAnimationPreset": 2,
+  "effects": [
+    {
+      "children": [
+        {
+          "hold_only": false,
+          "match": "mix",
+          "name": "Mix",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 1,
+            "kind": "Slider",
+            "max": 100.0,
+            "min": 0.0,
+            "slider_max": 100.0,
+            "slider_min": 0.0
+          },
+          "uid": 28,
+          "value": {
+            "t": "Scalar",
+            "v": 100.0
+          }
+        },
+        {
+          "hold_only": true,
+          "match": "sharpen_on",
+          "name": "Sharpen",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Checkbox"
+          },
+          "uid": 29,
+          "value": {
+            "t": "Bool",
+            "v": true
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "sharpen_amp",
+          "name": "Sharpen Amp",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 10.0,
+            "min": 0.0,
+            "slider_max": 10.0,
+            "slider_min": 0.0
+          },
+          "uid": 30,
+          "value": {
+            "t": "Scalar",
+            "v": 0.7
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "edge_threshold",
+          "name": "Edge Threshold",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 1.0,
+            "min": 0.0,
+            "slider_max": 1.0,
+            "slider_min": 0.0
+          },
+          "uid": 31,
+          "value": {
+            "t": "Scalar",
+            "v": 0.14
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "small_detail",
+          "name": "Small Detail Size (px)",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 2,
+            "kind": "Slider",
+            "max": 48.0,
+            "min": 0.0,
+            "slider_max": 48.0,
+            "slider_min": 0.0
+          },
+          "uid": 32,
+          "value": {
+            "t": "Scalar",
+            "v": 5.0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "sharpen_width",
+          "name": "Sharpen Width (px)",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 2,
+            "kind": "Slider",
+            "max": 960.0,
+            "min": 0.0,
+            "slider_max": 960.0,
+            "slider_min": 0.0
+          },
+          "uid": 33,
+          "value": {
+            "t": "Scalar",
+            "v": 26.88
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "sharpen_luma",
+          "name": "Sharpen Luma",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 34,
+          "value": {
+            "t": "Scalar",
+            "v": 1.19
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "sharpen_chroma",
+          "name": "Sharpen Chroma",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 35,
+          "value": {
+            "t": "Scalar",
+            "v": 1.24
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "sharpen_r",
+          "name": "Sharpen Red",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 36,
+          "value": {
+            "t": "Scalar",
+            "v": 1.18
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "sharpen_g",
+          "name": "Sharpen Green",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 37,
+          "value": {
+            "t": "Scalar",
+            "v": 1.15
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "sharpen_b",
+          "name": "Sharpen Blue",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 38,
+          "value": {
+            "t": "Scalar",
+            "v": 1.21
+          }
+        },
+        {
+          "hold_only": true,
+          "match": "quality",
+          "name": "Quality",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Popup",
+            "options": [
+              "Best",
+              "Fast"
+            ]
+          },
+          "uid": 39,
+          "value": {
+            "t": "Enum",
+            "v": 0
+          }
+        },
+        {
+          "hold_only": true,
+          "match": "unsharp_on",
+          "name": "Unsharp Mask",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Checkbox"
+          },
+          "uid": 40,
+          "value": {
+            "t": "Bool",
+            "v": true
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "unsharp_radius",
+          "name": "Unsharp Radius (px)",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 2,
+            "kind": "Slider",
+            "max": 100.0,
+            "min": 0.0,
+            "slider_max": 100.0,
+            "slider_min": 0.0
+          },
+          "uid": 41,
+          "value": {
+            "t": "Scalar",
+            "v": 12.0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "unsharp_amount",
+          "name": "Unsharp Amount (%)",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 2,
+            "kind": "Slider",
+            "max": 200.0,
+            "min": 0.0,
+            "slider_max": 200.0,
+            "slider_min": 0.0
+          },
+          "uid": 42,
+          "value": {
+            "t": "Scalar",
+            "v": 6.0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "unsharp_threshold",
+          "name": "Unsharp Threshold",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 2,
+            "kind": "Slider",
+            "max": 100.0,
+            "min": 0.0,
+            "slider_max": 100.0,
+            "slider_min": 0.0
+          },
+          "uid": 43,
+          "value": {
+            "t": "Scalar",
+            "v": 0.0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "unsharp_mix",
+          "name": "Mix with Original",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 1,
+            "kind": "Slider",
+            "max": 300.0,
+            "min": -300.0,
+            "slider_max": 300.0,
+            "slider_min": -300.0
+          },
+          "uid": 44,
+          "value": {
+            "t": "Scalar",
+            "v": 0.0
+          }
+        },
+        {
+          "hold_only": true,
+          "match": "flicker",
+          "name": "Reduce Flicker",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Popup",
+            "options": [
+              "Off",
+              "1-2-1",
+              "2-3-2",
+              "1-1-1"
+            ]
+          },
+          "uid": 45,
+          "value": {
+            "t": "Enum",
+            "v": 0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "looks_strength",
+          "name": "Looks Strength (inactive: opaque payload)",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 1,
+            "kind": "Slider",
+            "max": 100.0,
+            "min": 0.0,
+            "slider_max": 100.0,
+            "slider_min": 0.0
+          },
+          "uid": 46,
+          "value": {
+            "t": "Scalar",
+            "v": 76.0
+          }
+        },
+        {
+          "hold_only": true,
+          "match": "glow1_on",
+          "name": "Glow 1",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Checkbox"
+          },
+          "uid": 47,
+          "value": {
+            "t": "Bool",
+            "v": true
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow1_brightness",
+          "name": "Glow 1 Brightness",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 48,
+          "value": {
+            "t": "Scalar",
+            "v": 0.32
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow1_threshold",
+          "name": "Glow 1 Threshold",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 49,
+          "value": {
+            "t": "Scalar",
+            "v": 2.64
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow1_width",
+          "name": "Glow 1 Width (px)",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 2,
+            "kind": "Slider",
+            "max": 960.0,
+            "min": 0.0,
+            "slider_max": 960.0,
+            "slider_min": 0.0
+          },
+          "uid": 50,
+          "value": {
+            "t": "Scalar",
+            "v": 96.0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow1_width_r",
+          "name": "Glow 1 Width Red",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 51,
+          "value": {
+            "t": "Scalar",
+            "v": 1.0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow1_width_g",
+          "name": "Glow 1 Width Green",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 52,
+          "value": {
+            "t": "Scalar",
+            "v": 1.2
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow1_width_b",
+          "name": "Glow 1 Width Blue",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 53,
+          "value": {
+            "t": "Scalar",
+            "v": 1.4
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow1_color",
+          "name": "Glow 1 Color",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Color"
+          },
+          "uid": 54,
+          "value": {
+            "t": "Color",
+            "v": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "hold_only": true,
+          "match": "glow1_combine",
+          "name": "Glow 1 Combine",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Popup",
+            "options": [
+              "Mult",
+              "Add",
+              "Screen",
+              "Difference",
+              "Overlay"
+            ]
+          },
+          "uid": 55,
+          "value": {
+            "t": "Enum",
+            "v": 2
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow1_affect_alpha",
+          "name": "Glow 1 Affect Alpha",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 1.0,
+            "min": 0.0,
+            "slider_max": 1.0,
+            "slider_min": 0.0
+          },
+          "uid": 56,
+          "value": {
+            "t": "Scalar",
+            "v": 1.0
+          }
+        },
+        {
+          "hold_only": true,
+          "match": "glow2_on",
+          "name": "Glow 2",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Checkbox"
+          },
+          "uid": 57,
+          "value": {
+            "t": "Bool",
+            "v": true
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow2_brightness",
+          "name": "Glow 2 Brightness",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 58,
+          "value": {
+            "t": "Scalar",
+            "v": 0.44
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow2_threshold",
+          "name": "Glow 2 Threshold",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 59,
+          "value": {
+            "t": "Scalar",
+            "v": 0.77
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow2_width",
+          "name": "Glow 2 Width (px)",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 2,
+            "kind": "Slider",
+            "max": 960.0,
+            "min": 0.0,
+            "slider_max": 960.0,
+            "slider_min": 0.0
+          },
+          "uid": 60,
+          "value": {
+            "t": "Scalar",
+            "v": 90.0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow2_width_r",
+          "name": "Glow 2 Width Red",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 61,
+          "value": {
+            "t": "Scalar",
+            "v": 1.0
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow2_width_g",
+          "name": "Glow 2 Width Green",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 62,
+          "value": {
+            "t": "Scalar",
+            "v": 1.2
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow2_width_b",
+          "name": "Glow 2 Width Blue",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 5.0,
+            "min": 0.0,
+            "slider_max": 5.0,
+            "slider_min": 0.0
+          },
+          "uid": 63,
+          "value": {
+            "t": "Scalar",
+            "v": 1.4
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow2_color",
+          "name": "Glow 2 Color",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Color"
+          },
+          "uid": 64,
+          "value": {
+            "t": "Color",
+            "v": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "hold_only": true,
+          "match": "glow2_combine",
+          "name": "Glow 2 Combine",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "kind": "Popup",
+            "options": [
+              "Mult",
+              "Add",
+              "Screen",
+              "Difference",
+              "Overlay"
+            ]
+          },
+          "uid": 65,
+          "value": {
+            "t": "Enum",
+            "v": 2
+          }
+        },
+        {
+          "hold_only": false,
+          "match": "glow2_affect_alpha",
+          "name": "Glow 2 Affect Alpha",
+          "node": "Prop",
+          "shown_dims": 0,
+          "spatial": false,
+          "static_only": false,
+          "three_d_only": false,
+          "two_d_only": false,
+          "ui": {
+            "decimals": 3,
+            "kind": "Slider",
+            "max": 1.0,
+            "min": 0.0,
+            "slider_max": 1.0,
+            "slider_min": 0.0
+          },
+          "uid": 66,
+          "value": {
+            "t": "Scalar",
+            "v": 1.0
+          }
+        }
+      ],
+      "enabled": true,
+      "kind": {
+        "effect": "org.effectcraft.reconstruction.je-cream-cc",
+        "kind": "Effect"
+      },
+      "match": "org.effectcraft.reconstruction.je-cream-cc",
+      "name": "JE Cream CC (reconstructed)",
+      "uid": 27
+    }
+  ],
+  "name": "JE Cream CC (reconstructed)",
+  "properties": []
+}
