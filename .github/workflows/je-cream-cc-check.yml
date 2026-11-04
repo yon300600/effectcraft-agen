@@ -1,0 +1,96 @@
+name: je cream cc check
+
+# TEMPORARY verification job (deleted before this change is finished): builds the reconstruction
+# module, runs its tests, then drives the shipped CLI to prove the effect works inside EffectCraft.
+# The generated native preset is published as a PR comment so it can be committed.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          rustc --version | tee /tmp/toolchain.log
+          python3 --version | tee -a /tmp/toolchain.log
+          python3 -m pip install --quiet --break-system-packages ziglang wasmtime numpy
+          python3 -c "import ziglang, wasmtime, numpy; print('python deps ok')" | tee -a /tmp/toolchain.log
+          echo "ZIG_PY=1" >> $GITHUB_ENV
+
+      - name: Build the module
+        working-directory: effects/je-cream-cc
+        run: |
+          set -o pipefail
+          PYTHON=python3 ./build.sh 2>&1 | tee /tmp/build1.log
+          sha1=$(sha256sum build/je_cream_cc.wasm | cut -d' ' -f1)
+          PYTHON=python3 ./build.sh > /dev/null 2>&1
+          sha2=$(sha256sum build/je_cream_cc.wasm | cut -d' ' -f1)
+          echo "reproducible: $sha1 vs $sha2"
+          test "$sha1" = "$sha2"
+
+      - name: ABI checks
+        working-directory: effects/je-cream-cc
+        run: |
+          set -o pipefail
+          python3 tests/check_abi.py 2>&1 | tee /tmp/abi.log
+
+      - name: Pixel checks against the independent reference
+        working-directory: effects/je-cream-cc
+        run: |
+          set -o pipefail
+          python3 tests/check_pixels.py 2>&1 | tee /tmp/pixels.log
+
+      - name: Build the CLI
+        run: cargo build -p effectcraft-cli 2>&1 | tail -5
+
+      - name: In-application checks
+        env:
+          EFFECTCRAFT_CLI: target/debug/effectcraft-cli
+        run: |
+          set -o pipefail
+          effects/je-cream-cc/tests/app_check.sh 2>&1 | tee /tmp/app.log
+
+      - name: Publish the evidence and the generated preset
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "### JE Cream CC — verification (run ${{ github.run_id }})"
+            echo
+            echo '```'
+            cat /tmp/toolchain.log 2>/dev/null || true
+            echo '```'
+            echo "#### build"
+            echo '```'
+            tail -12 /tmp/build1.log 2>/dev/null || echo "(no build log)"
+            echo '```'
+            echo "#### ABI checks"
+            echo '```'
+            tail -40 /tmp/abi.log 2>/dev/null || echo "(not run)"
+            echo '```'
+            echo "#### pixel checks"
+            echo '```'
+            tail -25 /tmp/pixels.log 2>/dev/null || echo "(not run)"
+            echo '```'
+            echo "#### in-application checks"
+            echo '```'
+            grep -v '^{' /tmp/app.log 2>/dev/null | tail -60 || echo "(not run)"
+            echo '```'
+            echo "#### generated native preset (commit this as preset/je-cream-cc.preset.json)"
+            echo
+            echo '```json'
+            sed -n '/BEGIN PRESET/,/END PRESET/p' /tmp/app.log 2>/dev/null || echo "(not generated)"
+            echo '```'
+          } > /tmp/report.md
+          gh pr comment "$PR" --body-file /tmp/report.md
