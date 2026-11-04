@@ -29,6 +29,8 @@ which stage is exact, close, approximate or unsupported.
 | `tests/reference.py`, `tests/check_pixels.py` | an independent second implementation and 14 pixel checks against the module |
 | `tests/check_v8.mjs` | the same module in V8/Node — engine independence |
 | `tests/app_check.sh` | end-to-end check through the real CLI: load, apply, preset, render, pixel parity |
+| `tests/render_stills.py` | renders `docs/` before/after stills through the module |
+| `docs/` | the stills above and their source frame |
 | `ANALYSIS.md` | the complete analysis of the supplied JSON and the reconstruction decisions |
 | `TEST-RESULTS.md` | what was actually executed, with the output |
 
@@ -53,6 +55,21 @@ The effect is CPU-only and native (desktop/CLI): the browser build ships no wasm
 plug-ins have no GPU path. It must be loaded again in every process that renders a project
 using it — `.ecproj` stores the effect id, not the module.
 
+## What it looks like
+
+Rendered by the compiled module itself (`tests/render_stills.py`, default settings, 1280×853):
+
+| | before | after |
+|---|---|---|
+| full frame | ![before](docs/before.jpg) | ![after](docs/after.jpg) |
+| skin and eyes, 2× | ![detail before](docs/detail-before.jpg) | ![detail after](docs/detail-after.jpg) |
+
+The chain lifts and softens the mid-tones (glow 2 at threshold 0.77, brightness 0.44, 90 px wide,
+per-channel widths 1 / 1.2 / 1.4 gives the warm-cream cast) while the sharpen and unsharp stages
+hold the eyes, lashes and hair. `docs/source-portrait.jpg` is the untouched input; the stills are
+kept small on purpose (JPEG), so a few pixels of JPEG noise are in them - the PNG renders in
+`TEST-RESULTS.md` §4 are the lossless evidence.
+
 ## Defaults = the preset
 
 | Stage | Parameters (default) |
@@ -70,6 +87,7 @@ using it — `.ecproj` stores the effect id, not the module.
 ./build.sh                              # prints size + sha256
 python3 tests/check_abi.py              # 34 checks (needs wasmtime)
 python3 tests/check_pixels.py           # 14 checks vs the independent reference (needs numpy, wasmtime, node)
+python3 tests/render_stills.py          # before/after stills through the module (needs wasmtime, Pillow)
 tests/app_check.sh                      # in-app (needs a built effectcraft-cli; see TEST-RESULTS.md)
 ```
 
