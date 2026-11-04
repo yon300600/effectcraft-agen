@@ -7,6 +7,13 @@ application itself loads, registers and renders it.
 > Last updated: 2026-11-04. Re-run everything with `tools/wasm-effect-kit/run_tests.sh`
 > (tier A) and `tools/wasm-effect-kit/app_check.sh` + `tools/wasm-effect-kit/host` (tier B).
 
+**Bottom line.** The fixture module is compiled, loaded, executed and pixel-processed **both**
+standalone (wasmtime 50.0.1, V8; 48/48 and 14/14 checks) **and** inside the real EffectCraft
+application (its own `effectcraft-plugin` wasmi 2.0 host; the shipped CLI's loader, engine and
+renderer; workflow run `41779068845`, all stages green). It is **not** registered as a production
+effect, and no reconstruction of a third-party effect has been attempted yet — the fixture exists
+to prove the ABI and the integration path before that work starts.
+
 ---
 
 ## 1. Tier A — verified independently of the application
@@ -42,9 +49,9 @@ Totals: **48/48** checks in `check_host.py`, **14/14** in `check_host.mjs`.
 | B3 | `EffectPlugin::render` produces the expected pixels: identity unchanged, gain 2× on RGB with alpha untouched, radius 2 changes the frame | same | **pass** |
 | B4 | A failing render (short parameter list) reports an error and leaves the frame unchanged | same | **pass** |
 | B5 | The project's own plug-in test suite still passes on this branch | `cargo test -p effectcraft-plugin` | **pass** |
-| B6 | The application's loader command accepts the module (`effect.plugins.load`), lists it (`effect.plugins.list`) with api 1 and 7 parameters | `tools/wasm-effect-kit/app_check.sh load` | see §4 |
-| B7 | Applying the effect by id creates a real instance whose parameters are ordinary, animatable properties | `… app_check.sh project` | see §4 |
-| B8 | The effect changes a frame rendered by the real renderer | `… app_check.sh render` | see §4 |
+| B6 | The application's loader command accepts the module (`effect.plugins.load`), lists it (`effect.plugins.list`) with api 1 and 7 parameters | `tools/wasm-effect-kit/app_check.sh load` | **pass** (§4.1) |
+| B7 | Applying the effect by id creates a real instance whose parameters are ordinary, animatable properties (`prop.set`, `prop.addKey`, keyframe read back) | `… app_check.sh project` | **pass** (§4.2) |
+| B8 | The effect changes frames rendered by the real renderer (PNG sequence, with and without the effect) | `… app_check.sh render` | **pass** (§4.3) |
 
 ## 3. How tier B1–B5 was run (and why not here)
 
@@ -67,29 +74,114 @@ success  Real host check (effectcraft-plugin, wasmi 2.0)   ← tools/wasm-effect
 success  Plug-in crate tests                               ← cargo test -p effectcraft-plugin
 ```
 
-That job was **temporary** (project rules forbid adding CI in a feature PR); it ran from the
-working branch, its results are recorded here, and the workflow file is removed before the change
-is finished. Re-create it any time with the YAML in §6.
+The final run (`41779068845`, commit `b73b413`) ran every stage without `continue-on-error` and
+with `set -o pipefail`, so a failing stage fails the job:
 
-## 4. Tier B6–B8 — application-level checks
-
-`tools/wasm-effect-kit/app_check.sh` drives the shipped CLI (same engine, same host, same
-renderer as the desktop app) through three stages: `load`, `project`, `render`. Run it where a
-CLI build exists:
-
-```sh
-cargo build -p effectcraft-cli
-EFFECTCRAFT_CLI=target/debug/effectcraft-cli tools/wasm-effect-kit/app_check.sh
+```
+success  Toolchain
+success  Real host check (effectcraft-plugin, wasmi 2.0)
+success  Plug-in crate tests
+success  Build the CLI
+success  App stage load
+success  App stage project
+success  App stage render
 ```
 
-Status: recorded in the table below once a build was available — see the run log for the
-results at the time of writing.
+(An earlier run, `41735974156`, used `continue-on-error` and a `tee` pipeline without
+`pipefail`; a failing stage there still reported success. That masking was removed — the steps are
+green now because the stages pass, not because failures were swallowed.)
 
-| Stage | What it proves |
-|---|---|
-| `load` | `effect.plugins.load` returns `{id, name, category, version, api: 1, params: 7}`; `effect.plugins.list` shows `wasm: true` and the plug-in |
-| `project` | `comp.new` → `layer.newSolid` → `effect.apply` by id → `prop.set effects/#1/gain 2.0` → `props` shows the instance's parameters in the property tree |
-| `render` | `renderQueue.add`/`renderQueue.render` produce PNGs with and without the effect; the two frames differ, so the effect ran through the real renderer |
+That workflow was **temporary** (project rules forbid adding CI in a feature PR): it lived on the
+working branch only, its results are recorded here, and the file is deleted before this change is
+finished. Re-create it any time with the YAML in §6.
+
+## 4. Tier B6–B8 — application-level checks (executed)
+
+`tools/wasm-effect-kit/app_check.sh` drives the shipped CLI — same engine, same
+`effectcraft-plugin` wasmi host, same renderer as the desktop app — through three stages. It was
+built and run on a GitHub runner (`cargo build -p effectcraft-cli`, Ubuntu 24.04, rustc 1.99.1),
+workflow run **41779068845** (commit `b73b413`), with `set -o pipefail` and **no**
+`continue-on-error`: every stage's exit status is the job's.
+
+```
+success  Build the CLI
+success  App stage load
+success  App stage project
+success  App stage render
+```
+
+### 4.1 `app_check.sh load` — the application's own loader
+
+```
+[{"command":"effect.plugins.load","result":{"errors":[],"loaded":[{"api":1,
+  "category":"Test Plug-ins","id":"org.effectcraft.wasmkit.fixture.gain-blur",
+  "name":"WASM Kit Fixture: Gain and Box Blur","params":7,"version":"1.0.0"}]}},
+ {"command":"effect.plugins.list","result":{"api":1,"plugins":[{"author":"EffectCraft contributors",
+  "id":"org.effectcraft.wasmkit.fixture.gain-blur", "params":["radius","gain","tint","mix","mode",
+  "origin","enable"], "source":"…/tools/wasm-effect-kit/fixture/ec_gain_blur.wasm", …}],
+  "wasm":true}}]
+
+PASS load: registered org.effectcraft.wasmkit.fixture.gain-blur (api 1, 7 parameters, wasm runtime available)
+```
+
+The effect is in the application's registry, with its parameter names, ready for the Effects panel.
+
+### 4.2 `app_check.sh project` — applied by id, parameters behave like built-in ones
+
+The whole command sequence, as the CLI reported it (`comp.new` → `layer.newSolid` →
+`effect.plugins.load` → `effect.apply` → `prop.set` → `prop.get` → `prop.addKey` → `prop.get`):
+
+```
+{"result":[
+ {"command":"comp.new","result":{"comp":1}},
+ {"command":"layer.newSolid","result":{"layer":4}},
+ {"command":"effect.plugins.load","result":{"loaded":[{"api":1,"id":"org.effectcraft.wasmkit.fixture.gain-blur","params":7}]}},
+ {"command":"effect.apply","result":{"effect":"org.effectcraft.wasmkit.fixture.gain-blur","effects":[27],"paths":["effects/#1"]}},
+ {"command":"prop.set","result":2.0},
+ {"command":"prop.get","result":{"animated":false,"match":"gain","name":"Gain","type":"scalar","value":2.0,"keys":[]}},
+ {"command":"prop.addKey","result":1},
+ {"command":"prop.get","result":{"animated":true,"time":0.5,"value":3.0,
+   "keys":[{"time":0.5005,"value":3.0,"in":"Linear","out":"Linear"}]}}],
+ "saved":"…/with.ecproj"}
+
+PASS project: applied by id as effects/#1; effects/#1/Gain (scalar) takes prop.set and prop.addKey like any built-in parameter
+PASS project: saved …/with.ecproj
+```
+
+So a plug-in's parameters live in the ordinary property tree (`effects/#1/Gain`), take
+`prop.set`, accept `prop.addKey`, and come back with keyframe timing, interpolation and values —
+no separate animation system, exactly as the brief requires.
+
+### 4.3 `app_check.sh render` — pixels out of the real renderer
+
+Two runs of the same comp (32×32 grey solid, 0.5 grey), one with the plug-in applied and
+`gain = 2.0`, one without. `renderQueue.add` + `renderQueue.render` wrote a PNG sequence in each
+case; the script decodes frame 0 with its own PNG reader and compares the mean:
+
+```
+with effect:    00000.png (32, 32) mean RGB [255.0, 255.0, 255.0]
+without effect: 00000.png (32, 32) mean RGB [128.0, 128.0, 128.0]
+PASS render: the plug-in effect changed the rendered frame through the real renderer
+```
+
+128 → 255 is the plug-in's `gain = 2.0` applied to 0.5 grey by EffectCraft's renderer: the frame
+came out of the module, through the host, through the compositor, into a PNG.
+
+### 4.4 `host/` — the same module under the project's own wasmi host (run 41779068845)
+
+```
+registered org.effectcraft.wasmkit.fixture.gain-blur (WASM Kit Fixture: Gain and Box Blur), api 1, 7 parameters
+ok: identity parameters leave the frame unchanged
+ok: gain 2.0 doubles RGB, alpha untouched
+ok: radius 2 blurs the frame
+ok: a refused frame reports Some("ec_render returned error 1") and leaves the pixels unchanged
+
+real-host check passed (wasmi, plug-in API v1)
+```
+
+`cargo test -p effectcraft-plugin` ran alongside it and passed (`ok. 0 passed` — the crate ships
+no unit tests of its own; the meaningful coverage is `host/` above and the engine's own plug-in
+tests, which the project's `gate` job runs).
 
 ## 5. What still has to be true before a module loads in the real app
 
