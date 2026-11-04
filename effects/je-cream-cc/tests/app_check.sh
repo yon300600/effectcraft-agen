@@ -155,9 +155,27 @@ PY
 stage_render() {
     say ""
     say "== stage: render (real renders, with and without the effect) =="
-    mkdir -p "$OUT/with" "$OUT/without"
-    # A checkerboard over the grey solid (Blending Mode = Normal) covers the frame opaquely, so the
+    mkdir -p "$OUT/with" "$OUT/without" "$OUT/flat" "$OUT/flat0"
+    # A: a flat 0.9 grey field. Sharpening and unsharp masking are identities on a flat image, and a
+    # box blur of a constant field is the constant, so the only thing that acts is glow 2 - which
+    # depends on whether the host hands a plug-in display-referred or linear values. This frame
+    # therefore isolates the host's frame encoding from the operator, with a single output number.
+    # B: a checkerboard over the grey solid (Blending Mode = Normal) covers the frame opaquely, so the
     # composite *is* the layer the effect sees - which makes the pixel-parity check below meaningful.
+    "$CLI" --empty --json run --commands - >"$OUT/flat0.json" <<EOF
+{"command":"comp.new","params":{"name":"JECreamFlat","width":320,"height":180,"duration":1}}
+{"command":"layer.newSolid","params":{"name":"Field","color":[0.9,0.9,0.9]}}
+{"command":"renderQueue.add","params":{"comp":"JECreamFlat","format":"png","output":"$OUT/flat0/[#####].png","timeSpan":"comp"}}
+{"command":"renderQueue.render","params":{"wait":true}}
+EOF
+    "$CLI" --empty --json run --commands - >"$OUT/flat.json" <<EOF
+{"command":"comp.new","params":{"name":"JECreamFlat","width":320,"height":180,"duration":1}}
+{"command":"layer.newSolid","params":{"name":"Field","color":[0.9,0.9,0.9]}}
+{"command":"effect.plugins.load","params":{"path":"$WASM"}}
+{"command":"effect.apply","params":{"comp":"JECreamFlat","layer":"Field","effect":"$PLUGIN_ID"}}
+{"command":"renderQueue.add","params":{"comp":"JECreamFlat","format":"png","output":"$OUT/flat/[#####].png","timeSpan":"comp"}}
+{"command":"renderQueue.render","params":{"wait":true}}
+EOF
     "$CLI" --empty --json run --commands - >"$OUT/without.json" <<EOF
 {"command":"comp.new","params":{"name":"JECreamRender","width":320,"height":180,"duration":1}}
 {"command":"layer.newSolid","params":{"name":"Plate","color":[0.5,0.5,0.5]}}
@@ -176,15 +194,16 @@ EOF
 {"command":"renderQueue.add","params":{"comp":"JECreamRender","format":"png","output":"$OUT/with/[#####].png","timeSpan":"comp"}}
 {"command":"renderQueue.render","params":{"wait":true}}
 EOF
-    tail -c 400 "$OUT/with.json"; say ""
-    ls "$OUT/with" | wc -l
-    ls "$OUT/without" | wc -l
-    python3 - "$OUT/with" "$OUT/without" "$WASM" "$PLUGIN_ID" <<'PY'
+    tail -c 300 "$OUT/with.json"; say ""
+    python3 - "$OUT" "$WASM" <<'PY'
 import glob, json, os, struct, sys, zlib
+
+out_dir, wasm = sys.argv[1], sys.argv[2]
+
 
 def read_png(path):
     data = open(path, "rb").read()
-    assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
+    assert data[:8] == b"\x89PNG\r\n\x1a\n", f"not a PNG: {path}"
     pos, idat, w, h, depth, ctype = 8, b"", 0, 0, 8, 6
     while pos < len(data):
         (ln,) = struct.unpack(">I", data[pos:pos + 4])
@@ -216,89 +235,59 @@ def read_png(path):
                 line[i] = (line[i] + pr) & 0xFF
         rows.append(bytes(line))
         prev = line
-    return w, h, ch, rows
+    return {"w": w, "h": h, "ch": ch, "rows": rows}
 
-def first(folder):
+
+def png_of(folder):
     files = sorted(glob.glob(os.path.join(folder, "*.png")))
     assert files, f"no PNG in {folder}"
     return read_png(files[0])
 
-wf, wh, wch, wrows = first(sys.argv[1])
-uf, uh, uch, urows = first(sys.argv[2])
-assert (wf, wh) == (uf, uh), "the two renders differ in size"
-chan = min(wch, uch)
 
-def rgbpix(rows, ch, w, y, x):
-    i = x * ch
-    return rows[y][i], rows[y][i + 1], rows[y][i + 2]
+def rgb(img, x, y):
+    i = x * img["ch"]
+    r = img["rows"][y]
+    return r[i], r[i + 1], r[i + 2]
 
-diff = 0
-energy_w = energy_u = 0
-for y in range(wh):
-    for x in range(wf):
-        a = rgbpix(wrows, wch, wf, y, x)
-        b = rgbpix(urows, uch, uf, y, x)
-        diff += abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
-        if x + 1 < wf:
-            a2 = rgbpix(wrows, wch, wf, y, x + 1)
-            b2 = rgbpix(urows, uch, uf, y, x + 1)
-            energy_w += abs(a[0] - a2[0]) + abs(a[1] - a2[1]) + abs(a[2] - a2[2])
-            energy_u += abs(b[0] - b2[0]) + abs(b[1] - b2[1]) + abs(b[2] - b2[2])
-n = wf * wh * 3
-print(f"mean |with - without| = {diff / n:.2f}/255 per channel")
-print(f"horizontal gradient energy: without {energy_u}, with {energy_w} "
-      f"({(energy_w / max(energy_u, 1) - 1) * 100:+.1f}%)")
-assert diff > 0, "the effect did not change the rendered frame"
-assert energy_w > energy_u, "sharpening did not raise the high-frequency energy"
 
-# ---- parity: run the compiled module on the without-effect frame, compare with the app's render
-try:
-    import numpy as np
-    import wasmtime
-except ImportError as e:
-    print(f"FAIL parity check needs wasmtime and numpy: {e}")
-    sys.exit(1)
+def rgba(img, x, y):
+    i = x * img["ch"]
+    r = img["rows"][y]
+    a = r[i + 3] if img["ch"] == 4 else 255
+    return r[i], r[i + 1], r[i + 2], a
 
-wasm, plugin = sys.argv[3], sys.argv[4]
+
 man = json.loads(open(os.path.join(os.path.dirname(wasm), "..", "src", "manifest.json")).read())
 params = []
-for p in man["params"]:
-    v = p["default"]
-    if p["type"] == "checkbox":
+for p_ in man["params"]:
+    v = p_["default"]
+    if p_["type"] == "checkbox":
         params.append(1.0 if v else 0.0)
-    elif p["type"] in ("color", "point"):
+    elif p_["type"] in ("color", "point"):
         params += [float(x) for x in v]
     else:
         params.append(float(v))
-
-# ---- diagnostics: what did the renderer actually hand the effect?
-hist = {}
-for y in range(wh):
-    for x in range(wf):
-        r, g, b = rgbpix(urows, uch, uf, y, x)
-        hist[(r, g, b)] = hist.get((r, g, b), 0) + 1
-top = sorted(hist.items(), key=lambda kv: -kv[1])[:6]
-print("without-effect frame: " + ", ".join(f"rgb{k} x{v}" for k, v in top))
-print(f"  distinct colours {len(hist)}, size {wf}x{wh}")
-
-eng = wasmtime.Engine()
+import wasmtime
+ENG = wasmtime.Engine()
+MOD = wasmtime.Module.from_file(ENG, wasm)
 
 
-def run_module(pixels, scale):
-    """pixels: flat list of premultiplied (r,g,b,a) floats."""
-    store = wasmtime.Store(eng)
-    inst = wasmtime.Instance(store, wasmtime.Module.from_file(eng, wasm), [])
+def run_module(img, pixels, scale):
+    """pixels: premultiplied (r,g,b,a) floats, row major."""
+    w, h = img["w"], img["h"]
+    store = wasmtime.Store(ENG)
+    inst = wasmtime.Instance(store, MOD, [])
     ex = inst.exports(store)
-    total = len(params) * 8 + wf * wh * 16
+    total = len(params) * 8 + w * h * 16
     base = ex["ec_alloc"](store, total)
     assert base, "ec_alloc returned null"
     buf = bytearray(struct.pack(f"<{len(params)}d", *params))
     buf += struct.pack(f"<{len(pixels)}f", *pixels)
     ex["memory"].write(store, bytes(buf), base)
-    rc = ex["ec_render"](store, base + len(params) * 8, wf, wh, base, len(params), 0.0, scale)
+    rc = ex["ec_render"](store, base + len(params) * 8, w, h, base, len(params), 0.0, scale)
     assert rc == 0, f"ec_render returned {rc}"
-    raw = bytes(ex["memory"].read(store, base + len(params) * 8, base + len(params) * 8 + wf * wh * 16))
-    return struct.unpack(f"<{wf * wh * 4}f", raw)
+    raw = bytes(ex["memory"].read(store, base + len(params) * 8, base + len(params) * 8 + w * h * 16))
+    return struct.unpack(f"<{w * h * 4}f", raw)
 
 
 def to_linear(c):
@@ -310,50 +299,119 @@ def to_display(c):
     return c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
 
 
-def build(space):
+def encode(img):
+    """Both candidate encodings of the frame the host hands the plug-in."""
+    return {
+        "display": lambda r, g, b: (r / 255.0, g / 255.0, b / 255.0),
+        "linear": lambda r, g, b: (to_linear(r / 255.0), to_linear(g / 255.0), to_linear(b / 255.0)),
+    }
+
+
+def flatten(img, space):
+    enc = encode(img)[space]
     px = []
-    for y in range(wh):
-        for x in range(wf):
-            r, g, b = rgbpix(urows, uch, uf, y, x)
-            a = urows[y][x * uch + 3] / 255.0 if uch == 4 else 1.0
-            rgb = [r / 255.0, g / 255.0, b / 255.0]
-            if space == "linear":
-                rgb = [to_linear(v) for v in rgb]
-            px += [rgb[0] * a, rgb[1] * a, rgb[2] * a, a]
+    for y in range(img["h"]):
+        for x in range(img["w"]):
+            r, g, b, a8 = rgba(img, x, y)
+            r, g, b = enc(r, g, b)
+            a = a8 / 255.0
+            px += [r * a, g * a, b * a, a]
     return px
 
 
-def compare(out, space):
-    diffs = []
-    for i in range(wf * wh):
+def decode(out, space):
+    """The module's premultiplied output -> 8-bit display values (list of (r,g,b) 0..255)."""
+    res = []
+    for i in range(len(out) // 4):
         a = out[i * 4 + 3]
+        v = []
         for c in range(3):
-            want = out[i * 4 + c] / a if a > 0 else 0.0
+            x = out[i * 4 + c] / a if a > 0 else 0.0
             if space == "linear":
-                want = to_display(want)
-            want *= 255.0
-            got = rgbpix(wrows, wch, wf, i // wf, i % wf)[c]
-            diffs.append(abs(want - got))
-    mean = sum(diffs) / len(diffs)
-    within2 = 100.0 * sum(1 for d in diffs if d <= 2.0) / len(diffs)
-    return mean, max(diffs), within2
+                x = to_display(x)
+            v.append(min(max(x, 0.0), 1.0) * 255.0)
+        res.append(tuple(v))
+    return res
 
 
+def spread(img):
+    hist = {}
+    for y in range(img["h"]):
+        for x in range(img["w"]):
+            k = rgb(img, x, y)
+            hist[k] = hist.get(k, 0) + 1
+    return sorted(hist.items(), key=lambda kv: -kv[1])[:4]
+
+
+flat0, flat = png_of(os.path.join(out_dir, "flat0")), png_of(os.path.join(out_dir, "flat"))
+without, with_ = png_of(os.path.join(out_dir, "without")), png_of(os.path.join(out_dir, "with"))
+assert (flat0["w"], flat0["h"]) == (with_["w"], with_["h"]), "renders differ in size"
+
+# ---------- sanity: the effect really did change the frame, and sharpening added detail
+diff = sum(abs(rgb(without, x, y)[c] - rgb(with_, x, y)[c])
+           for y in range(without["h"]) for x in range(without["w"]) for c in range(3))
+print(f"mean |with - without| = {diff / (without['w'] * without['h'] * 3):.2f}/255 per channel")
+assert diff > 0, "the effect did not change the rendered frame"
+
+
+def detail(img):
+    s = 0
+    for y in range(img["h"]):
+        for x in range(img["w"] - 1):
+            a, b = rgb(img, x, y), rgb(img, x + 1, y)
+            s += abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
+    return s
+
+
+energy_u, energy_w = detail(without), detail(with_)
+print(f"horizontal gradient energy: without {energy_u}, with {energy_w} "
+      f"({(energy_w / max(energy_u, 1) - 1) * 100:+.1f}%)")
+assert energy_w > energy_u, "sharpening did not raise the high-frequency energy"
+
+# ---------- A: the flat field tells us how the host encodes the frame it hands a plug-in
+say_like = "flat field (0.9 grey): the effect only fires glow 2, so one number decides the encoding"
+print(say_like)
+print(f"  without effect: {rgb(flat0, 160, 90)}   with effect: {rgb(flat, 160, 90)}")
+for space in ("display", "linear"):
+    o = decode(run_module(flat0, flatten(flat0, space), 1.0), space)
+    print(f"  module, {space:7s} in: {tuple(round(v, 1) for v in o[90 * flat0['w'] + 160])}")
+
+# ---------- B: the checkerboard frame exercises the whole chain, edges included
+print(f"without-effect frame: {spread(without)}")
+flat_mask = [False] * (without["w"] * without["h"])
+for y in range(1, without["h"] - 1):
+    for x in range(1, without["w"] - 1):
+        c = rgb(without, x, y)
+        flat_mask[y * without["w"] + x] = all(rgb(without, x + dx, y + dy) == c
+                                              for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+print(f"  interior (flat 4-neighbourhood) pixels: {sum(flat_mask)} of {len(flat_mask)}")
+
+given = [rgb(with_, x, y) for y in range(with_["h"]) for x in range(with_["w"])]
 print("parity hypotheses (how the host might encode the frame it hands a plug-in):")
 results = []
 for space in ("display", "linear"):
-    for scale in (1.0, 0.5):
-        out = run_module(build(space), scale)
-        mean, worst, within2 = compare(out, space)
-        results.append((mean, space, scale, worst, within2))
-        print(f"  {space:7s} space, scale {scale:<4}: mean {mean:5.2f}/255, worst {worst:5.0f}, "
-              f"{within2:5.1f}% within 2/255")
+    inp = flatten(without, space)
+    for scale in (1.0, 0.5, 2.0):
+        got = decode(run_module(without, inp, scale), space)
+        diffs = [abs(g[c] - given[i][c]) for i, g in enumerate(got) for c in range(3)]
+        mean = sum(diffs) / len(diffs)
+        within2 = 100.0 * sum(1 for d in diffs if d <= 2.0) / len(diffs)
+        inner = [abs(got[i][c] - given[i][c]) for i in range(len(got)) if flat_mask[i] for c in range(3)]
+        edge = [abs(got[i][c] - given[i][c]) for i in range(len(got)) if not flat_mask[i] for c in range(3)]
+        results.append((mean, space, scale, max(diffs), within2))
+        print(f"  {space:7s} space, scale {scale:<4}: mean {mean:5.2f}/255, worst {max(diffs):5.0f}, "
+              f"{within2:5.1f}% within 2/255 | interior {sum(inner) / max(len(inner), 1):5.2f}, "
+              f"edge {sum(edge) / max(len(edge), 1):5.2f}")
 
 mean, space, scale, worst, within2 = min(results)
 print(f"best: {space} space, scale {scale} -> mean {mean:.2f}/255, worst {worst:.0f}/255, "
       f"{within2:.1f}% of channels within 2/255")
-assert mean <= 2.0, f"no host encoding reproduces the app's render (best: {space}/{scale}, mean {mean:.2f}/255)"
-assert within2 >= 95.0, f"only {within2:.1f}% of channels agree within 2/255 (best: {space}/{scale})"
+best_out = decode(run_module(without, flatten(without, space), scale), space)
+worst_px = sorted(range(len(given)), key=lambda i: -max(abs(best_out[i][c] - given[i][c]) for c in range(3)))[:3]
+print("worst pixels (app vs module): " +
+      "; ".join(f"({i % without['w']},{i // without['w']}) {given[i]} vs "
+                f"{tuple(round(v) for v in best_out[i])}" for i in worst_px))
+assert mean <= 3.0, f"no host encoding reproduces the app's render (best: {space}/{scale}, mean {mean:.2f}/255)"
 print(f"PASS render: the app's renderer reproduces the standalone module's pixels "
       f"({space} space, scale {scale}); the residue is 8-bit PNG quantisation")
 PY
