@@ -53,10 +53,12 @@ $ gh api repos/rust-lang/rust/releases/latest --jq '.assets|length'             
 
 Consequences, stated plainly:
 
-1. **EffectCraft's own workspace was not built or tested here.** `cargo build`, `cargo test`,
-   `cargo xtask ci` could not run. Nothing in this document claims otherwise.
-2. The **real wasmi host was therefore not executed** here. `tools/wasm-effect-kit/host/` is a
-   standalone crate that performs that check, ready to run where cargo works (§6).
+1. **EffectCraft's own workspace was not built or tested in this sandbox.** `cargo build`,
+   `cargo test` and `cargo xtask ci` need the blocked hosts. They were run on a GitHub runner
+   instead — see §6a, which records exactly which commands ran and what they printed; the
+   sandbox itself contributed only the non-Rust work.
+2. The **real wasmi host was therefore not executed here**, only on that runner (§6a).
+   `tools/wasm-effect-kit/host/` remains a standalone crate that anyone can run where cargo works.
 3. Compiling effect modules here uses **Zig's clang frontend**, which produces exactly what the
    ABI needs: a dependency-free `wasm32` module with no imports. This is why `ziglang` was
    installed from PyPI (a wheel containing the official Zig compiler); the same build works with
@@ -176,7 +178,7 @@ even though the registry is not.
 
 | Limitation | Effect | Mitigation |
 |---|---|---|
-| No Rust toolchain / registry | EffectCraft not compiled; wasmi host not executed; `cargo test`/`xtask` not run | kit's two executed runtimes + provided real-host crate; run §6 where cargo exists |
+| No Rust toolchain / registry **in the sandbox** | EffectCraft cannot be compiled here; the wasmi host, `cargo test` and `xtask ci` cannot be run here | they were run on a GitHub Actions runner (§6a, run `41779068845`), and the project's own `CI / gate` job passes on this branch |
 | Zig from a PyPI wheel | compiler provenance is the `ziglang` wheel, not a system Zig | same source builds with any Zig ≥ 0.13; `ZIG=/path/to/zig ./fixture/build.sh` |
 | 2 cores, 3 GB | no meaningful performance numbers | timing printed only as a sanity figure |
 | No browser | the **application's** wasm build (`cargo xtask web`) was not exercised | unchanged by this work (nothing in the app's build was modified) |

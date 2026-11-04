@@ -183,6 +183,13 @@ real-host check passed (wasmi, plug-in API v1)
 no unit tests of its own; the meaningful coverage is `host/` above and the engine's own plug-in
 tests, which the project's `gate` job runs).
 
+### 4.5 The project's own gate on this branch
+
+`CI / gate` (`.github/workflows/ci.yml` → craft-common-actions `gate.yml`, i.e. `cargo xtask ci`:
+audio backend, `fmt --check`, `clippy -D warnings`, the workspace test suite, pdf-deps, layers,
+assets, wasm) **passed** on this branch (`b73b413`). The changes here add documents, shell
+scripts, a standalone host crate and a `.wasm` fixture; no existing source file is modified.
+
 ## 5. What still has to be true before a module loads in the real app
 
 Everything below is about the *application*, not the module:
