@@ -17,6 +17,7 @@ cp -R "$HERE/src" "$HERE/tests" "$HERE/tools" "$HERE/build" "$HERE/build.sh" "$H
       "$HERE/README.md" "$HERE/ANALYSIS.md" "$STAGE/$NAME/"
 [ -f "$HERE/TEST-RESULTS.md" ] && cp "$HERE/TEST-RESULTS.md" "$STAGE/$NAME/"
 [ -d "$HERE/preset" ] && cp -R "$HERE/preset" "$STAGE/$NAME/" || true
+[ -d "$HERE/docs" ] && cp -R "$HERE/docs" "$STAGE/$NAME/" || true
 rm -rf "$STAGE/$NAME/tests/__pycache__" "$STAGE/$NAME/src/__pycache__" "$STAGE/$NAME/build/.tmp"
 
 cat > "$STAGE/$NAME/FILES.txt" <<EOF
@@ -35,6 +36,8 @@ tests/reference.py              independent Python implementation of the same ma
 tests/check_pixels.py           14 pixel checks: module vs reference, plus V8 parity
 tests/check_v8.mjs              the module in V8 (engine independence)
 tests/app_check.sh              in-application check through the EffectCraft CLI
+tests/render_stills.py          renders the before/after stills through the module
+docs/                           before/after stills (JPEG) and their source frame
 preset/je-cream-cc.preset.json  native EffectCraft animation preset (Apply Animation Preset...)
 ANALYSIS.md                     analysis of the supplied JSON and the reconstruction decisions
 TEST-RESULTS.md                 what was executed and what it printed
