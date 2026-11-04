@@ -1,0 +1,55 @@
+{
+  "api": 1,
+  "id": "org.effectcraft.reconstruction.je-cream-cc",
+  "name": "JE Cream CC (reconstructed)",
+  "category": "Reconstruction",
+  "version": "1.0.0",
+  "author": "EffectCraft reconstruction task",
+  "description": "Independent reconstruction of the effect chain in the preset 'JE Cream CC' (S_Sharpen -> BCC Unsharp Mask -> Looks -> S_Glow -> S_Glow 2), rebuilt from the preset's own parameter values with publicly documented image-processing maths. Sapphire/BCC/Looks internals are proprietary and were not used: the sharpening, unsharp masking and glow are our own implementations of the published techniques, matched to the stored settings. The Magic Bullet 'Looks' stage is an opaque payload and is not reproduced (its strength is exposed but inactive). Defaults are the preset's values at 1920 px; radii scale with frame size and preview scale.",
+  "params": [
+    {"id": "mix", "name": "Mix", "type": "slider", "default": 100, "min": 0, "max": 100, "decimals": 1},
+
+    {"id": "sharpen_on", "name": "Sharpen", "type": "checkbox", "default": true},
+    {"id": "sharpen_amp", "name": "Sharpen Amp", "type": "slider", "default": 0.7, "min": 0, "max": 10, "decimals": 3},
+    {"id": "edge_threshold", "name": "Edge Threshold", "type": "slider", "default": 0.14, "min": 0, "max": 1, "decimals": 3},
+    {"id": "small_detail", "name": "Small Detail Size (px)", "type": "slider", "default": 5, "min": 0, "max": 48, "decimals": 2},
+    {"id": "sharpen_width", "name": "Sharpen Width (px)", "type": "slider", "default": 26.88, "min": 0, "max": 960, "decimals": 2},
+    {"id": "sharpen_luma", "name": "Sharpen Luma", "type": "slider", "default": 1.19, "min": 0, "max": 5, "decimals": 3},
+    {"id": "sharpen_chroma", "name": "Sharpen Chroma", "type": "slider", "default": 1.24, "min": 0, "max": 5, "decimals": 3},
+    {"id": "sharpen_r", "name": "Sharpen Red", "type": "slider", "default": 1.18, "min": 0, "max": 5, "decimals": 3},
+    {"id": "sharpen_g", "name": "Sharpen Green", "type": "slider", "default": 1.15, "min": 0, "max": 5, "decimals": 3},
+    {"id": "sharpen_b", "name": "Sharpen Blue", "type": "slider", "default": 1.21, "min": 0, "max": 5, "decimals": 3},
+    {"id": "quality", "name": "Quality", "type": "popup", "options": ["Best", "Fast"], "default": 0},
+
+    {"id": "unsharp_on", "name": "Unsharp Mask", "type": "checkbox", "default": true},
+    {"id": "unsharp_radius", "name": "Unsharp Radius (px)", "type": "slider", "default": 12, "min": 0, "max": 100, "decimals": 2},
+    {"id": "unsharp_amount", "name": "Unsharp Amount (%)", "type": "slider", "default": 6, "min": 0, "max": 200, "decimals": 2},
+    {"id": "unsharp_threshold", "name": "Unsharp Threshold", "type": "slider", "default": 0, "min": 0, "max": 100, "decimals": 2},
+    {"id": "unsharp_mix", "name": "Mix with Original", "type": "slider", "default": 0, "min": -300, "max": 300, "decimals": 1},
+    {"id": "flicker", "name": "Reduce Flicker", "type": "popup", "options": ["Off", "1-2-1", "2-3-2", "1-1-1"], "default": 0},
+
+    {"id": "looks_strength", "name": "Looks Strength (inactive: opaque payload)", "type": "slider", "default": 76, "min": 0, "max": 100, "decimals": 1},
+
+    {"id": "glow1_on", "name": "Glow 1", "type": "checkbox", "default": true},
+    {"id": "glow1_brightness", "name": "Glow 1 Brightness", "type": "slider", "default": 0.32, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow1_threshold", "name": "Glow 1 Threshold", "type": "slider", "default": 2.64, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow1_width", "name": "Glow 1 Width (px)", "type": "slider", "default": 96, "min": 0, "max": 960, "decimals": 2},
+    {"id": "glow1_width_r", "name": "Glow 1 Width Red", "type": "slider", "default": 1, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow1_width_g", "name": "Glow 1 Width Green", "type": "slider", "default": 1.2, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow1_width_b", "name": "Glow 1 Width Blue", "type": "slider", "default": 1.4, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow1_color", "name": "Glow 1 Color", "type": "color", "default": [1, 1, 1, 1]},
+    {"id": "glow1_combine", "name": "Glow 1 Combine", "type": "popup", "options": ["Mult", "Add", "Screen", "Difference", "Overlay"], "default": 2},
+    {"id": "glow1_affect_alpha", "name": "Glow 1 Affect Alpha", "type": "slider", "default": 1, "min": 0, "max": 1, "decimals": 3},
+
+    {"id": "glow2_on", "name": "Glow 2", "type": "checkbox", "default": true},
+    {"id": "glow2_brightness", "name": "Glow 2 Brightness", "type": "slider", "default": 0.44, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow2_threshold", "name": "Glow 2 Threshold", "type": "slider", "default": 0.77, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow2_width", "name": "Glow 2 Width (px)", "type": "slider", "default": 90, "min": 0, "max": 960, "decimals": 2},
+    {"id": "glow2_width_r", "name": "Glow 2 Width Red", "type": "slider", "default": 1, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow2_width_g", "name": "Glow 2 Width Green", "type": "slider", "default": 1.2, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow2_width_b", "name": "Glow 2 Width Blue", "type": "slider", "default": 1.4, "min": 0, "max": 5, "decimals": 3},
+    {"id": "glow2_color", "name": "Glow 2 Color", "type": "color", "default": [1, 1, 1, 1]},
+    {"id": "glow2_combine", "name": "Glow 2 Combine", "type": "popup", "options": ["Mult", "Add", "Screen", "Difference", "Overlay"], "default": 2},
+    {"id": "glow2_affect_alpha", "name": "Glow 2 Affect Alpha", "type": "slider", "default": 1, "min": 0, "max": 1, "decimals": 3}
+  ]
+}

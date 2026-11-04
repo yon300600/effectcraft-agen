@@ -1,0 +1,5 @@
+fixture/manifest_bytes.h
+fixture/manifest_bytes_spin.h
+host/target/
+__pycache__/
+*.pyc

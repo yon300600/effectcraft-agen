@@ -1,0 +1,18 @@
+{
+  "api": 1,
+  "id": "org.effectcraft.wasmkit.fixture.gain-blur",
+  "name": "WASM Kit Fixture: Gain and Box Blur",
+  "category": "Test Plug-ins",
+  "version": "1.0.0",
+  "author": "EffectCraft contributors",
+  "description": "ABI conformance fixture for the WebAssembly effect kit. Deterministic box blur, gain, tint and alpha mode. NOT a production effect and NOT a reconstruction of any third-party effect.",
+  "params": [
+    {"id": "radius", "name": "Radius", "type": "slider", "default": 1, "min": 0, "max": 64, "sliderMax": 8, "decimals": 0},
+    {"id": "gain", "name": "Gain", "type": "slider", "default": 1.0, "min": 0, "max": 4, "decimals": 3},
+    {"id": "tint", "name": "Tint", "type": "color", "default": [1.0, 0.5, 0.2, 1.0]},
+    {"id": "mix", "name": "Tint Mix", "type": "slider", "default": 0, "min": 0, "max": 100, "decimals": 1},
+    {"id": "mode", "name": "Mode", "type": "popup", "options": ["Blur and Gain", "Invert Alpha", "Pass Through"], "default": 0},
+    {"id": "origin", "name": "Tint Origin", "type": "point", "default": [0.5, 0.5]},
+    {"id": "enable", "name": "Enable", "type": "checkbox", "default": true}
+  ]
+}

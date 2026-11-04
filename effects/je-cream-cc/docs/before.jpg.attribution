@@ -1,0 +1,8 @@
+asset:        before.jpg
+title:        "JE Cream CC" reconstruction: the before still
+author:       EffectCraft contributors (image generated for this repository)
+source:       original work: generated with an image model, no third-party source material
+license:      MIT OR Apache-2.0
+license-file: LICENSE-MIT
+added:        2026-11-04 by EffectCraft contributors (Arena agent, reconstruction stills)
+notes:        the untouched source frame, downscaled to 1280 px by `tests/render_stills.py`. Not derived from any Adobe asset.

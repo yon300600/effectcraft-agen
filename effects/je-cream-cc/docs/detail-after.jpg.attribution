@@ -1,0 +1,8 @@
+asset:        detail-after.jpg
+title:        "JE Cream CC" reconstruction: skin and eyes, after (2x)
+author:       EffectCraft contributors (image generated for this repository)
+source:       original work: generated with an image model, no third-party source material
+license:      MIT OR Apache-2.0
+license-file: LICENSE-MIT
+added:        2026-11-04 by EffectCraft contributors (Arena agent, reconstruction stills)
+notes:        a 2x nearest-neighbour crop of `docs/after.jpg`. Not derived from any Adobe asset.
