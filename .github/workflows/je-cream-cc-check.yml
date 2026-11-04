@@ -1,10 +1,11 @@
-name: je cream cc check
+name: JE Cream CC effect checks
 
-# TEMPORARY verification job (deleted before this change is finished): builds the reconstruction
-# module, runs its tests, then drives the shipped CLI to prove the effect works inside EffectCraft.
-# The generated native preset is published as a PR comment so it can be committed.
+# Builds the reconstructed plug-in, runs its ABI and pixel tests, then drives the shipped CLI to
+# prove the effect loads, applies, round-trips through a preset and renders inside EffectCraft
+# (including a pixel-parity check against the module run standalone). Runs when the effect changes.
 on:
   pull_request:
+    paths: ["effects/je-cream-cc/**", ".github/workflows/je-cream-cc-check.yml"]
   workflow_dispatch:
 
 permissions:
@@ -84,7 +85,9 @@ jobs:
             echo '```'
             echo "#### in-application checks"
             echo '```'
-            grep -v '^{"' /tmp/app.log 2>/dev/null | tail -120 || echo "(not run)"
+            grep -v '^{"' /tmp/app.log 2>/dev/null | head -40 || echo "(not run)"
+            echo '...'
+            grep -v '^{"' /tmp/app.log 2>/dev/null | tail -400 || true
             echo '```'
             echo "#### generated native preset (commit this as preset/je-cream-cc.preset.json)"
             echo
@@ -92,4 +95,4 @@ jobs:
             sed -n '/BEGIN PRESET/,/END PRESET/p' /tmp/app.log 2>/dev/null || echo "(not generated)"
             echo '```'
           } > /tmp/report.md
-          gh pr comment "$PR" --body-file /tmp/report.md
+          if [ -n "${PR:-}" ]; then gh pr comment "$PR" --body-file /tmp/report.md; fi

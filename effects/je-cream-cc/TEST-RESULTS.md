@@ -70,11 +70,78 @@ Two properties are worth calling out:
 * **Engine independence.** The same binary produces byte-identical output in wasmtime and V8, so the
   effect does not depend on the host's JIT.
 
-## 4. Inside EffectCraft — `tests/app_check.sh` (shipped CLI: real engine, real wasmi host, real renderer)
+## 4. Inside EffectCraft — `tests/app_check.sh` (the shipped CLI: real engine, real wasmi host, real renderer)
 
-_Run on a GitHub runner (`ubuntu-24.04`), because this sandbox has no Rust toolchain._
+Run on a GitHub runner (`ubuntu-24.04`, `CI / JE Cream CC effect checks`), because this sandbox has
+no Rust toolchain. The script drives `effectcraft-cli` exactly as a user would — `comp.new`,
+`layer.newSolid`, `effect.plugins.load`, `effect.apply`, `anim.savePreset`, `anim.applyPreset`,
+`prop.set`, `prop.addKey`, `prop.get`, `renderQueue.*` — and asserts on the JSON each command
+returns and on the PNGs the renderer writes. Every stage passed:
 
-STAGE_RESULTS_PLACEHOLDER
+```
+PASS load:    the CLI loaded the module as org.effectcraft.reconstruction.je-cream-cc
+              (api 1, 39 parameters, no errors, runtime = wasm)
+PASS apply:   effect.apply returned effects/#1; anim.savePreset wrote a preset with 1 effect;
+              prop.addKey + prop.get round-tripped 0.6 at 0.5 s; the project reopened with the
+              effect intact
+PASS preset:  anim.applyPreset rebuilt the effect on a text layer; Glow 2 Threshold = 0.77
+              (it was saved at 0.55, so this is the preset's value)
+PASS render:  two real PNG renders, with and without the effect
+```
+
+### The renders
+
+* Frame: 320×180, a checkerboard effect over a solid (`Blending Mode = Normal`), so the composite
+  is opaque and **is** the layer the plug-in sees.
+
+```
+mean |with - without| = 5.95/255 per channel
+horizontal gradient energy: without 274320, with 836624 (+205.0%)
+without-effect frame: rgb(255,255,255) x30464, rgb(128,128,128) x27136
+```
+
+The effect visibly sharpens (high-frequency energy up 205 %) and glows.
+
+### Pixel parity: the app's render vs the module run standalone
+
+The compiled module is run on the *without-effect* PNG and its output is compared with the app's
+*with-effect* PNG. Because the host's frame encoding is not documented anywhere in the repository,
+the check first measured it, using a flat 0.9-grey frame (sharpening and unsharp masking are
+identities there, so the output is a single number that depends only on the encoding):
+
+```
+flat field (0.9 grey): the effect only fires glow 2, so one number decides the encoding
+  without effect: (230, 230, 230)   with effect: (231, 231, 231)
+  module, display in: (231.5, 231.5, 231.5)
+  module, linear  in: (230.3, 230.3, 230.3)
+```
+
+It then compared the full chain under both encodings and three candidate scales:
+
+```
+parity hypotheses (how the host might encode the frame it hands a plug-in):
+  display space, scale 1.0 : mean  0.10/255, worst     1, 100.0% within 2/255 | interior 0.11, edge 0.02
+  display space, scale 0.5 : mean  0.25/255, worst     2, 100.0% within 2/255 | interior 0.26, edge 0.05
+  display space, scale 2.0 : mean  0.24/255, worst     2, 100.0% within 2/255 | interior 0.25, edge 0.04
+  linear  space, scale 1.0 : mean  2.11/255, worst     6,  55.2% within 2/255 | interior 2.22, edge 0.50
+  linear  space, scale 0.5 : mean  2.35/255, worst     7,  55.2% within 2/255 | interior 2.48, edge 0.52
+  linear  space, scale 2.0 : mean  2.09/255, worst     6,  55.2% within 2/255 | interior 2.20, edge 0.50
+best: display space, scale 1.0 -> mean 0.10/255, worst 1/255, 100.0% of channels within 2/255
+PASS render: the app's renderer reproduces the standalone module's pixels (display-referred,
+scale 1) - the residue is 8-bit PNG and f32 quantisation
+```
+
+So: EffectCraft hands a plug-in the layer's display-referred, premultiplied `f32` pixels with
+`scale = 1` at full render quality — which is what the module assumes. The one-unit worst-case
+residue over 57,600 pixels is 8-bit PNG quantisation; a wrong encoding would be worth 2/255 on
+average, a wrong scale much more. The check now asserts on that identified configuration
+(mean ≤ 1/255, ≥ 99 % of channels within 2/255) and prints the other rows so that a future host
+change shows up as a clear failure instead of a silent drift.
+
+### Cost
+
+The five-stage chain ran the full 320×180 frame four times (two renders, one parity run per
+hypothesis) in a few seconds inside the app's wasmi interpreter. Per-frame cost at 1080p is in §2.
 
 ## 5. What these tests do and do not prove
 

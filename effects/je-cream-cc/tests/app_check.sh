@@ -387,6 +387,10 @@ for y in range(1, without["h"] - 1):
 print(f"  interior (flat 4-neighbourhood) pixels: {sum(flat_mask)} of {len(flat_mask)}")
 
 given = [rgb(with_, x, y) for y in range(with_["h"]) for x in range(with_["w"])]
+# What the host does was determined by the flat-field render above and by the table below:
+# EffectCraft hands a plug-in the layer's own display-referred, premultiplied f32 pixels with
+# scale = 1 at full render quality. The other rows are kept as diagnostics so that a future host
+# change (a linear working space, a proxy resolution) is visible instead of silent.
 print("parity hypotheses (how the host might encode the frame it hands a plug-in):")
 results = []
 for space in ("display", "linear"):
@@ -403,17 +407,24 @@ for space in ("display", "linear"):
               f"{within2:5.1f}% within 2/255 | interior {sum(inner) / max(len(inner), 1):5.2f}, "
               f"edge {sum(edge) / max(len(edge), 1):5.2f}")
 
-mean, space, scale, worst, within2 = min(results)
+best = min(results)
+mean, space, scale, worst, within2 = best
 print(f"best: {space} space, scale {scale} -> mean {mean:.2f}/255, worst {worst:.0f}/255, "
       f"{within2:.1f}% of channels within 2/255")
+ident = next(r for r in results if r[1] == "display" and r[2] == 1.0)
+assert ident[0] <= 1.0, (
+    f"the app's render does not match the module run in the host's own encoding "
+    f"(display/1.0: mean {ident[0]:.2f}/255, worst {ident[3]:.0f}); the host now behaves differently "
+    f"- see the table above")
+assert ident[4] >= 99.0, f"only {ident[4]:.1f}% of channels agree within 2/255 (display/1.0)"
 best_out = decode(run_module(without, flatten(without, space), scale), space)
 worst_px = sorted(range(len(given)), key=lambda i: -max(abs(best_out[i][c] - given[i][c]) for c in range(3)))[:3]
 print("worst pixels (app vs module): " +
       "; ".join(f"({i % without['w']},{i // without['w']}) {given[i]} vs "
                 f"{tuple(round(v) for v in best_out[i])}" for i in worst_px))
-assert mean <= 3.0, f"no host encoding reproduces the app's render (best: {space}/{scale}, mean {mean:.2f}/255)"
 print(f"PASS render: the app's renderer reproduces the standalone module's pixels "
-      f"({space} space, scale {scale}); the residue is 8-bit PNG quantisation")
+      f"(display-referred, scale 1: mean {ident[0]:.2f}/255, worst {ident[3]:.0f}/255, "
+      f"{ident[4]:.1f}% within 2/255) - the residue is 8-bit PNG and f32 quantisation")
 PY
 }
 
