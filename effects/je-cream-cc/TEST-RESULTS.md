@@ -79,15 +79,26 @@ no Rust toolchain. The script drives `effectcraft-cli` exactly as a user would �
 returns and on the PNGs the renderer writes. Every stage passed:
 
 ```
-PASS load:    the CLI loaded the module as org.effectcraft.reconstruction.je-cream-cc
-              (api 1, 39 parameters, no errors, runtime = wasm)
-PASS apply:   effect.apply returned effects/#1; anim.savePreset wrote a preset with 1 effect;
-              prop.addKey + prop.get round-tripped 0.6 at 0.5 s; the project reopened with the
-              effect intact
-PASS preset:  anim.applyPreset rebuilt the effect on a text layer; Glow 2 Threshold = 0.77
-              (it was saved at 0.55, so this is the preset's value)
-PASS render:  two real PNG renders, with and without the effect
+PASS load: registered org.effectcraft.reconstruction.je-cream-cc (api 1, 39 parameters, wasm runtime available)
+PASS apply: applied by id as effects/#1; glow2_brightness keyed at 0.5 s (Linear), project saved, preset written with 1 effect
+PASS apply: saved <tmp>/je.ecproj
+PASS preset: anim.applyPreset rebuilt the effect on the text layer; Glow 2 Threshold = 0.77 (it was saved at 0.55, so this is the preset's value)
+PASS render: the app's renderer reproduces the standalone module's pixels (display-referred, scale 1: mean 0.10/255, worst 1/255, 100.0% within 2/255) - the residue is 8-bit PNG and f32 quantisation
 ```
+
+The run is `JE Cream CC effect checks` on commit `5b2777c` (all five stages green). What each stage
+actually asserts:
+
+* **load** — `effect.plugins.load` returns the module as `org.effectcraft.reconstruction.je-cream-cc`
+  with `api 1`, `params 39`, no errors, and the host reports a working WebAssembly runtime.
+* **apply** — `effect.apply {"effect": "<id>"}` puts it on the layer as `effects/#1`; a parameter is
+  changed with `prop.set`, keyed with `prop.addKey` (Linear) and read back with `prop.get` at 0.5 s;
+  `anim.savePreset` writes a preset containing the effect; the project is saved and reopened with the
+  effect, its values and its keyframe intact.
+* **preset** — a *fresh* comp, with the effect applied from the saved `preset/je-cream-cc.preset.json`
+  by `anim.applyPreset`: the effect is rebuilt with its 39 properties, and `Glow 2 Threshold` reads
+  0.77 — the value the preset was saved with, not the 0.55 the previous stage left on the other
+  layer.
 
 ### The renders
 
