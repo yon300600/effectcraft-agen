@@ -1,0 +1,32 @@
+name: tmp assets check
+
+# TEMPORARY: reports which cheap `cargo xtask ci` stage is unhappy with the new effect files.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  cheap-stages:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cheap ci stages
+        run: |
+          set +e
+          {
+            echo "### cheap \`cargo xtask ci\` stages"
+            echo '```'
+            cargo fmt --check 2>&1 | tail -20; echo "fmt: $?"
+            cargo xtask assets 2>&1 | tail -40; echo "assets: $?"
+            cargo xtask layers 2>&1 | tail -20; echo "layers: $?"
+            cargo xtask pdf-deps 2>&1 | tail -20; echo "pdf-deps: $?"
+            cargo xtask wasm 2>&1 | tail -20; echo "wasm: $?"
+            echo '```'
+          } > /tmp/report.md
+          cat /tmp/report.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/report.md || true
