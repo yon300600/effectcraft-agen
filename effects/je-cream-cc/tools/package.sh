@@ -37,7 +37,8 @@ tests/check_pixels.py           14 pixel checks: module vs reference, plus V8 pa
 tests/check_v8.mjs              the module in V8 (engine independence)
 tests/app_check.sh              in-application check through the EffectCraft CLI
 tests/render_stills.py          renders the before/after stills through the module
-docs/                           before/after stills (JPEG) and their source frame
+docs/                           before/after stills (JPEG), their source frame, and the
+                                .attribution sidecars the repository's assets gate requires
 preset/je-cream-cc.preset.json  native EffectCraft animation preset (Apply Animation Preset...)
 ANALYSIS.md                     analysis of the supplied JSON and the reconstruction decisions
 TEST-RESULTS.md                 what was executed and what it printed
