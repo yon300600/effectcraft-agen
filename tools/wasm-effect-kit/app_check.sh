@@ -52,7 +52,8 @@ EOF
 import json, sys
 doc = json.load(open(sys.argv[1]))
 want = sys.argv[2]
-steps = doc if isinstance(doc, list) else doc.get("results", doc)
+# `run --json` prints a bare array; with `--save-as` it prints {"result": [...], "saved": ...}
+steps = doc if isinstance(doc, list) else (doc.get("result") or doc.get("results") or doc)
 loaded = steps[0]["result"]["loaded"][0]
 assert loaded["id"] == want, f"loaded {loaded['id']!r}, expected {want!r}"
 assert loaded["api"] == 1, f"api {loaded['api']}"
@@ -84,7 +85,8 @@ EOF
 import json, sys
 doc = json.load(open(sys.argv[1]))
 want = sys.argv[3]
-steps = doc if isinstance(doc, list) else doc.get("results", doc)
+# `run --json` prints a bare array; with `--save-as` it prints {"result": [...], "saved": ...}
+steps = doc if isinstance(doc, list) else (doc.get("result") or doc.get("results") or doc)
 applied = steps[3]["result"]
 assert applied["effect"] == want, f"applied {applied['effect']!r}, expected {want!r}"
 path = applied["paths"][0]
