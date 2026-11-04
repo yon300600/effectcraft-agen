@@ -155,11 +155,13 @@ stage_render() {
     say ""
     say "== stage: render (real renders, with and without the effect) =="
     mkdir -p "$OUT/with" "$OUT/without"
-    # A checkerboard layer covers the frame, so the composite *is* the layer the effect sees.
+    # A checkerboard over the grey solid (Blending Mode = Normal) covers the frame opaquely, so the
+    # composite *is* the layer the effect sees - which makes the pixel-parity check below meaningful.
     "$CLI" --empty --json run --commands - >"$OUT/without.json" <<EOF
 {"command":"comp.new","params":{"name":"JECreamRender","width":320,"height":180,"duration":1}}
 {"command":"layer.newSolid","params":{"name":"Plate","color":[0.5,0.5,0.5]}}
 {"command":"effect.apply","params":{"comp":"JECreamRender","layer":"Plate","effect":"Checkerboard"}}
+{"command":"prop.set","params":{"comp":"JECreamRender","layer":"Plate","path":"effects/#1/blendingMode","value":1}}
 {"command":"renderQueue.add","params":{"comp":"JECreamRender","format":"png","output":"$OUT/without/[#####].png","timeSpan":"comp"}}
 {"command":"renderQueue.render","params":{"wait":true}}
 EOF
@@ -167,6 +169,7 @@ EOF
 {"command":"comp.new","params":{"name":"JECreamRender","width":320,"height":180,"duration":1}}
 {"command":"layer.newSolid","params":{"name":"Plate","color":[0.5,0.5,0.5]}}
 {"command":"effect.apply","params":{"comp":"JECreamRender","layer":"Plate","effect":"Checkerboard"}}
+{"command":"prop.set","params":{"comp":"JECreamRender","layer":"Plate","path":"effects/#1/blendingMode","value":1}}
 {"command":"effect.plugins.load","params":{"path":"$WASM"}}
 {"command":"effect.apply","params":{"comp":"JECreamRender","layer":"Plate","effect":"$PLUGIN_ID"}}
 {"command":"renderQueue.add","params":{"comp":"JECreamRender","format":"png","output":"$OUT/with/[#####].png","timeSpan":"comp"}}

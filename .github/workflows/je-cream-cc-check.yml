@@ -57,7 +57,7 @@ jobs:
           EFFECTCRAFT_CLI: target/debug/effectcraft-cli
         run: |
           set -o pipefail
-          effects/je-cream-cc/tests/app_check.sh 2>&1 | tee /tmp/app.log
+          sh effects/je-cream-cc/tests/app_check.sh 2>&1 | tee /tmp/app.log
 
       - name: Publish the evidence and the generated preset
         if: always()
