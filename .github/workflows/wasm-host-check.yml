@@ -29,7 +29,9 @@ jobs:
           cargo run --release 2>&1 | tee /tmp/host.log
 
       - name: Plug-in crate tests
-        run: cargo test -p effectcraft-plugin 2>&1 | tee /tmp/tests.log | tail -25
+        run: |
+          set -o pipefail
+          cargo test -p effectcraft-plugin 2>&1 | tee /tmp/tests.log | tail -25
 
       - name: Build the CLI
         run: cargo build -p effectcraft-cli 2>&1 | tail -5
@@ -37,17 +39,23 @@ jobs:
       - name: "App stage load"
         env:
           EFFECTCRAFT_CLI: target/debug/effectcraft-cli
-        run: ./tools/wasm-effect-kit/app_check.sh load 2>&1 | tee /tmp/app-load.log
+        run: |
+          set -o pipefail
+          ./tools/wasm-effect-kit/app_check.sh load 2>&1 | tee /tmp/app-load.log
 
       - name: "App stage project"
         env:
           EFFECTCRAFT_CLI: target/debug/effectcraft-cli
-        run: ./tools/wasm-effect-kit/app_check.sh project 2>&1 | tee /tmp/app-project.log | tail -40
+        run: |
+          set -o pipefail
+          ./tools/wasm-effect-kit/app_check.sh project 2>&1 | tee /tmp/app-project.log | tail -40
 
       - name: "App stage render"
         env:
           EFFECTCRAFT_CLI: target/debug/effectcraft-cli
-        run: ./tools/wasm-effect-kit/app_check.sh render 2>&1 | tee /tmp/app-render.log | tail -40
+        run: |
+          set -o pipefail
+          ./tools/wasm-effect-kit/app_check.sh render 2>&1 | tee /tmp/app-render.log | tail -40
 
       - name: Publish the evidence as a PR comment
         if: always()

@@ -74,7 +74,9 @@ stage_project() {
 {"command":"effect.plugins.load","params":{"path":"$WASM"}}
 {"command":"effect.apply","params":{"comp":"WasmCheck","layer":"Plate","effect":"$PLUGIN_ID"}}
 {"command":"prop.set","params":{"comp":"WasmCheck","layer":"Plate","path":"effects/#1/gain","value":2.0}}
-{"command":"get_layer","params":{"comp":"WasmCheck","layer":"Plate","flat":true}}
+{"command":"prop.get","params":{"comp":"WasmCheck","layer":"Plate","path":"effects/#1/gain"}}
+{"command":"prop.addKey","params":{"comp":"WasmCheck","layer":"Plate","path":"effects/#1/gain","time":0.5,"value":3.0}}
+{"command":"prop.get","params":{"comp":"WasmCheck","layer":"Plate","path":"effects/#1/gain","time":0.5}}
 EOF
     cat "$OUT/project.json"
     say ""
@@ -87,10 +89,14 @@ applied = steps[3]["result"]
 assert applied["effect"] == want, f"applied {applied['effect']!r}, expected {want!r}"
 path = applied["paths"][0]
 assert path and path.startswith("effects/#"), f"unexpected instance path {path!r}"
-tree = steps[5]["result"]
-flat = json.dumps(tree)
-assert f"{path}/gain" in flat, f"{path}/gain missing from the layer's property tree"
-print(f"PASS project: applied by id as {path}; {path}/gain is an ordinary animatable property")
+static = steps[5]["result"]
+assert float(static["value"]) == 2.0, f"gain reads {static['value']!r} after prop.set 2.0"
+assert static["animated"] is False, "a fresh instance parameter should not be animated yet"
+keyed = steps[7]["result"]
+assert keyed["animated"] is True and len(keyed["keys"]) == 1, f"keyframe not stored: {keyed}"
+assert float(keyed["value"]) == 3.0, f"value at the key is {keyed['value']!r}"
+print(f"PASS project: applied by id as {path}; {path}/{static['name']} ({static['type']}) takes "
+      f"prop.set and prop.addKey like any built-in parameter")
 PY
     [ -s "$OUT/with.ecproj" ] || die "project was not saved"
     say "PASS project: saved $OUT/with.ecproj"
